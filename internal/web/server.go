@@ -1,0 +1,158 @@
+package web
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"log/slog"
+	"logispro/internal/config"
+	"logispro/internal/constants"
+	"logispro/internal/shared/response_types"
+	"logispro/internal/web/controllers"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type Server struct {
+	Domain     string
+	Logger     *slog.Logger
+	Controller controllers.Controller
+}
+
+type ApiHandlerFunc func(w http.ResponseWriter, r *http.Request) response_types.ApiResponse
+
+func (s *Server) makeHttpHandler(handler ApiHandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		resp := handler(w, r)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+
+		if resp.Error != nil {
+			if resp.StatusCode == http.StatusInternalServerError {
+				s.Logger.Error("error", slog.Any("content", resp.Error))
+				json.NewEncoder(w).Encode(map[string]map[string]any{"data": {"error": "internal server error"}})
+			} else {
+				json.NewEncoder(w).Encode(map[string]map[string]any{"data": {"error": resp.Error}})
+			}
+		} else {
+			json.NewEncoder(w).Encode(map[string]any{"data": resp.Content})
+		}
+	}
+}
+func (s *Server) LoggingMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			next.ServeHTTP(w, r)
+			s.Logger.Info("request",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("remote", r.RemoteAddr),
+				slog.Duration("duration", time.Since(start)),
+			)
+		})
+	}
+}
+
+func RecoveryMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rec := recover(); rec != nil {
+					logger.Error("handler panic recovered",
+						slog.String("method", r.Method),
+						slog.String("path", r.URL.Path),
+						slog.String("remote", r.RemoteAddr),
+						slog.Any("error", rec),
+					)
+
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusInternalServerError)
+
+					json.NewEncoder(w).Encode(map[string]any{
+						"data": map[string]string{
+							"error": "internal server error",
+						},
+					})
+				}
+			}()
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func NewServer(domain string, logger *slog.Logger, mainController controllers.Controller) Server {
+	return Server{
+		Domain:     domain,
+		Logger:     logger,
+		Controller: mainController,
+	}
+}
+
+func (s *Server) Run() {
+
+	mux := http.NewServeMux()
+
+	mux.Handle("POST /user", s.makeHttpHandler(s.Controller.UserController.CreateUserHandler))
+	mux.Handle("PATCH /user", AuthMiddleware(s.makeHttpHandler(s.Controller.UserController.UpdateUserHandler)))
+
+	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
+	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))
+	if err := http.ListenAndServe(s.Domain, handler); err != nil {
+		s.Logger.Error("server failed", slog.String("error", err.Error()))
+	}
+}
+
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			http.Error(w, "Bearer token missing", http.StatusUnauthorized)
+			return
+		}
+
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("unexpected signing method")
+			}
+			return config.JwtSecret, nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok || !token.Valid {
+			http.Error(w, "Invalid claims", http.StatusUnauthorized)
+			return
+		}
+
+		userID, ok := claims[constants.UserIDContextKey].(float64) // float64 because of JSON
+		if !ok {
+			http.Error(w, "user_id missing in token", http.StatusUnauthorized)
+			return
+		}
+		role, ok := claims[constants.UserRoleContextKey].(float64) // float64 because of JSON
+		if !ok {
+			http.Error(w, "role missing in token", http.StatusUnauthorized)
+			return
+		}
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, constants.UserIDContextKey, int64(userID))
+		ctx = context.WithValue(ctx, constants.UserRoleContextKey, int64(role))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
