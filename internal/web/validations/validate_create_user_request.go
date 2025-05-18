@@ -53,5 +53,5 @@ func ValidateCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 	if errs.IsEmpty() {
 		return nil, logoHeader, nil
 	}
-	return errs, logoHeader, errs
+	return errs, logoHeader, nil
 }

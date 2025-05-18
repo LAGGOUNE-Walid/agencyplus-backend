@@ -21,6 +21,23 @@ func (q *Queries) CountUsersByEmail(ctx context.Context, email string) (int64, e
 	return count, err
 }
 
+const countUsersByEmailExcludingID = `-- name: CountUsersByEmailExcludingID :one
+SELECT COUNT(*) FROM users
+WHERE email = ? AND id != ?
+`
+
+type CountUsersByEmailExcludingIDParams struct {
+	Email string `json:"email"`
+	ID    int64  `json:"id"`
+}
+
+func (q *Queries) CountUsersByEmailExcludingID(ctx context.Context, arg CountUsersByEmailExcludingIDParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUsersByEmailExcludingID, arg.Email, arg.ID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countUsersByPhone = `-- name: CountUsersByPhone :one
 SELECT COUNT(*) FROM users WHERE phone = ?
 `
@@ -51,7 +68,7 @@ type CreateUserParams struct {
 	AgencyLogo    sql.NullString `json:"agency_logo"`
 	Wilaya        string         `json:"wilaya"`
 	Daira         string         `json:"daira"`
-	Password      interface{}    `json:"password"`
+	Password      string         `json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error) {
@@ -67,6 +84,31 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 		arg.Daira,
 		arg.Password,
 	)
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at FROM users WHERE email = ? LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Fullname,
+		&i.Role,
+		&i.Email,
+		&i.Phone,
+		&i.AgencyName,
+		&i.AgencyAddress,
+		&i.AgencyLogo,
+		&i.Wilaya,
+		&i.Daira,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateLogo = `-- name: UpdateLogo :exec
@@ -96,8 +138,8 @@ WHERE id = ?
 `
 
 type UpdatePasswordParams struct {
-	Password interface{} `json:"password"`
-	ID       int64       `json:"id"`
+	Password string `json:"password"`
+	ID       int64  `json:"id"`
 }
 
 func (q *Queries) UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error {

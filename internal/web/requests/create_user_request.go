@@ -27,6 +27,9 @@ func ParseCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Context)
 	if err != nil {
 		return req, nil, err
 	}
+	if len(validationErrors) > 0 {
+		return req, validationErrors, nil
+	}
 
 	req.FullName = r.FormValue("fullname")
 	req.Email = r.FormValue("email")

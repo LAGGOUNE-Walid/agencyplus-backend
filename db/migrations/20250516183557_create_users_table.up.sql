@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     agency_logo TEXT,
     wilaya TEXT NOT NULL,
     daira TEXT NOT NULL,
-    password NOT NULL,
+    password TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

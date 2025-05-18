@@ -4,10 +4,12 @@ import (
 	"log/slog"
 	"logispro/internal/config"
 	"logispro/internal/db"
+	"logispro/internal/services/contact_service"
 	"logispro/internal/services/user_services"
 	"logispro/internal/sqlite"
 	"logispro/internal/web"
 	"logispro/internal/web/controllers"
+	"logispro/internal/web/controllers/contact"
 	"logispro/internal/web/controllers/user"
 	"os"
 )
@@ -18,6 +20,17 @@ func InitServices(logger *slog.Logger, queries *db.Queries) controllers.Controll
 	return controllers.Controller{
 		UserController: &user.UserController{
 			CreateUserService: &user_services.CreateUserService{
+				Queries: queries,
+			},
+			AuthService: &user_services.AuthService{
+				Queries: queries,
+			},
+			UpdateUserService: &user_services.UpdateUserService{
+				Queries: queries,
+			},
+		},
+		ContactController: &contact.ContactController{
+			CreateContactService: &contact_service.CreateContactService{
 				Queries: queries,
 			},
 		},

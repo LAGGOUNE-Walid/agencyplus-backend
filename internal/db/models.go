@@ -8,6 +8,26 @@ import (
 	"database/sql"
 )
 
+type Contact struct {
+	ID                     int64          `json:"id"`
+	UserID                 int64          `json:"user_id"`
+	Fullname               string         `json:"fullname"`
+	Phone                  sql.NullString `json:"phone"`
+	Email                  sql.NullString `json:"email"`
+	Wilaya                 sql.NullString `json:"wilaya"`
+	Daira                  sql.NullString `json:"daira"`
+	ClientType             sql.NullString `json:"client_type"`
+	SearchingFor           sql.NullString `json:"searching_for"`
+	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
+	HouseFinishing         sql.NullString `json:"house_finishing"`
+	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
+	IsMarried              sql.NullBool   `json:"is_married"`
+	MinBudget              sql.NullInt64  `json:"min_budget"`
+	MaxBudget              sql.NullInt64  `json:"max_budget"`
+	CreatedAt              sql.NullTime   `json:"created_at"`
+	UpdatedAt              sql.NullTime   `json:"updated_at"`
+}
+
 type User struct {
 	ID            int64          `json:"id"`
 	Fullname      string         `json:"fullname"`
@@ -19,7 +39,7 @@ type User struct {
 	AgencyLogo    sql.NullString `json:"agency_logo"`
 	Wilaya        string         `json:"wilaya"`
 	Daira         string         `json:"daira"`
-	Password      interface{}    `json:"password"`
+	Password      string         `json:"password"`
 	CreatedAt     sql.NullTime   `json:"created_at"`
 	UpdatedAt     sql.NullTime   `json:"updated_at"`
 }

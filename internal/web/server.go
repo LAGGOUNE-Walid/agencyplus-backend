@@ -34,13 +34,24 @@ func (s *Server) makeHttpHandler(handler ApiHandlerFunc) http.HandlerFunc {
 		if resp.Error != nil {
 			if resp.StatusCode == http.StatusInternalServerError {
 				s.Logger.Error("error", slog.Any("content", resp.Error))
-				json.NewEncoder(w).Encode(map[string]map[string]any{"data": {"error": "internal server error"}})
+				json.NewEncoder(w).Encode(map[string]map[string]any{
+					"data": {
+						"error": "internal server error",
+					},
+				})
 			} else {
-				json.NewEncoder(w).Encode(map[string]map[string]any{"data": {"error": resp.Error}})
+				json.NewEncoder(w).Encode(map[string]map[string]any{
+					"data": {
+						"error": resp.Error.Error(),
+					},
+				})
 			}
 		} else {
-			json.NewEncoder(w).Encode(map[string]any{"data": resp.Content})
+			json.NewEncoder(w).Encode(map[string]any{
+				"data": resp.Content,
+			})
 		}
+
 	}
 }
 func (s *Server) LoggingMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
@@ -52,7 +63,7 @@ func (s *Server) LoggingMiddleware(logger *slog.Logger) func(http.Handler) http.
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.String("remote", r.RemoteAddr),
-				slog.Duration("duration", time.Since(start)),
+				slog.Duration("duration ms", time.Duration(time.Since(start).Milliseconds())),
 			)
 		})
 	}
@@ -98,8 +109,11 @@ func (s *Server) Run() {
 
 	mux := http.NewServeMux()
 
+	// Routes
 	mux.Handle("POST /user", s.makeHttpHandler(s.Controller.UserController.CreateUserHandler))
-	mux.Handle("PATCH /user", AuthMiddleware(s.makeHttpHandler(s.Controller.UserController.UpdateUserHandler)))
+	mux.Handle("POST /auth", s.makeHttpHandler(s.Controller.UserController.Auth))
+	mux.Handle("PATCH /user", AuthMiddleware(OwnerGuardMiddleware(s.makeHttpHandler(s.Controller.UserController.UpdateUserHandler))))
+	mux.Handle("POST /contact", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.CreateContactHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))
@@ -145,7 +159,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "user_id missing in token", http.StatusUnauthorized)
 			return
 		}
-		role, ok := claims[constants.UserRoleContextKey].(float64) // float64 because of JSON
+		role, ok := claims[constants.UserRoleContextKey].(float64)
 		if !ok {
 			http.Error(w, "role missing in token", http.StatusUnauthorized)
 			return
@@ -153,6 +167,22 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, constants.UserIDContextKey, int64(userID))
 		ctx = context.WithValue(ctx, constants.UserRoleContextKey, int64(role))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func OwnerGuardMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		role, ok := ctx.Value(constants.UserRoleContextKey).(int64)
+		if !ok {
+			http.Error(w, "role missing in context", http.StatusUnauthorized)
+			return
+		}
+		if role != constants.ROLE_OWENER {
+			http.Error(w, "this endpoint is gaurded with owner role", http.StatusUnauthorized)
+			return
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
