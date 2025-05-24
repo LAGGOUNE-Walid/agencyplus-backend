@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"logispro/internal/config"
 	"logispro/internal/constants"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/web/controllers"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -26,30 +28,42 @@ type ApiHandlerFunc func(w http.ResponseWriter, r *http.Request) response_types.
 
 func (s *Server) makeHttpHandler(handler ApiHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		resp := handler(w, r)
+		r.Body = http.MaxBytesReader(w, r.Body, 500<<20) // 500mb
+		err := r.ParseMultipartForm(100 << 20)           // 100 mb
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(map[string]map[string]any{
+				"data": {
+					"error": fmt.Sprintf("failed to parse multipart form: %w", err),
+				},
+			})
+		} else {
+			resp := handler(w, r)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(resp.StatusCode)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(resp.StatusCode)
 
-		if resp.Error != nil {
-			if resp.StatusCode == http.StatusInternalServerError {
-				s.Logger.Error("error", slog.Any("content", resp.Error))
-				json.NewEncoder(w).Encode(map[string]map[string]any{
-					"data": {
-						"error": "internal server error",
-					},
-				})
+			if resp.Error != nil {
+				if resp.StatusCode == http.StatusInternalServerError {
+					s.Logger.Error("error", slog.Any("content", resp.Error))
+					json.NewEncoder(w).Encode(map[string]map[string]any{
+						"data": {
+							"error": "internal server error",
+						},
+					})
+				} else {
+					json.NewEncoder(w).Encode(map[string]map[string]any{
+						"data": {
+							"error": resp.Error.Error(),
+						},
+					})
+				}
 			} else {
-				json.NewEncoder(w).Encode(map[string]map[string]any{
-					"data": {
-						"error": resp.Error.Error(),
-					},
+				json.NewEncoder(w).Encode(map[string]any{
+					"data": resp.Content,
 				})
 			}
-		} else {
-			json.NewEncoder(w).Encode(map[string]any{
-				"data": resp.Content,
-			})
 		}
 
 	}
@@ -74,11 +88,13 @@ func RecoveryMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if rec := recover(); rec != nil {
+					s := debug.Stack()
 					logger.Error("handler panic recovered",
 						slog.String("method", r.Method),
 						slog.String("path", r.URL.Path),
 						slog.String("remote", r.RemoteAddr),
 						slog.Any("error", rec),
+						slog.Any("stack", string(s)),
 					)
 
 					w.Header().Set("Content-Type", "application/json")
@@ -119,7 +135,9 @@ func (s *Server) Run() {
 	mux.Handle("DELETE /contact/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.DeleteContactHandler)))
 	mux.Handle("POST /building", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingHandler)))
 	mux.Handle("GET /building", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetBuildingsHandler)))
-	mux.Handle("GET /building/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetBuildingHandler)))
+	mux.Handle("PATCH /building/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.UpdateBuildingHandler)))
+	mux.Handle("POST /building/{id}/images", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingImagesHandler)))
+	mux.Handle("DELETE /building/{id}/:imageId", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.UpdateBuildingHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))

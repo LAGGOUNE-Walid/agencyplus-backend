@@ -1,0 +1,84 @@
+package building_service
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"logispro/internal/constants"
+	"logispro/internal/db"
+	"logispro/internal/utils"
+	"logispro/internal/web/requests"
+)
+
+type UpdateBuildingService struct {
+	Queries *db.Queries
+}
+
+func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, req requests.UpdateBuildingRequest, buildingId int64) error {
+	return s.Queries.UpdateBuilding(ctx, db.UpdateBuildingParams{
+		Title:                      sql.NullString{String: req.Title, Valid: req.Title != ""},
+		Location:                   sql.NullString{String: req.Location, Valid: req.Location != ""},
+		Wilaya:                     sql.NullString{String: req.Wilaya, Valid: req.Wilaya != ""},
+		Daira:                      sql.NullString{String: req.Daira, Valid: req.Daira != ""},
+		BuildingType:               sql.NullString{String: req.BuildingType, Valid: req.BuildingType != ""},
+		IsPromotionBuilding:        sql.NullBool{Bool: req.IsPromotionBuilding, Valid: true}, // adjust validation if needed
+		IsResidency:                sql.NullBool{Bool: req.IsResidency, Valid: true},
+		Status:                     sql.NullString{String: req.Status, Valid: req.Status != ""},
+		Price:                      sql.NullInt64{Int64: req.Price, Valid: req.Price != 0},
+		SurfaceTotal:               sql.NullFloat64{Float64: req.SurfaceTotal, Valid: req.SurfaceTotal != 0},
+		SurfaceBuilt:               sql.NullFloat64{Float64: req.SurfaceBuilt, Valid: req.SurfaceBuilt != 0},
+		Rooms:                      sql.NullInt64{Int64: req.Rooms, Valid: req.Rooms != 0},
+		Bathrooms:                  sql.NullInt64{Int64: req.Bathrooms, Valid: req.Bathrooms != 0},
+		FloorsTotal:                sql.NullInt64{Int64: req.FloorsTotal, Valid: req.FloorsTotal != 0},
+		ParkingSpaces:              sql.NullInt64{Int64: req.ParkingSpaces, Valid: req.ParkingSpaces != 0},
+		IsByTheSea:                 sql.NullBool{Bool: req.IsByTheSea, Valid: true},
+		HasWater:                   sql.NullBool{Bool: req.HasWater, Valid: true},
+		HasElectricity:             sql.NullBool{Bool: req.HasElectricity, Valid: true},
+		HasGas:                     sql.NullBool{Bool: req.HasGas, Valid: true},
+		HasInternet:                sql.NullBool{Bool: req.HasInternet, Valid: true},
+		HasGarden:                  sql.NullBool{Bool: req.HasGarden, Valid: true},
+		HasPool:                    sql.NullBool{Bool: req.HasPool, Valid: true},
+		HasElevator:                sql.NullBool{Bool: req.HasElevator, Valid: true},
+		HasCentralHeating:          sql.NullBool{Bool: req.HasCentralHeating, Valid: true},
+		HasWaterTank:               sql.NullBool{Bool: req.HasWaterTank, Valid: true},
+		HasAirConditioner:          sql.NullBool{Bool: req.HasAirConditioner, Valid: true},
+		HasEquippedKitchen:         sql.NullBool{Bool: req.HasEquippedKitchen, Valid: true},
+		HasTerrace:                 sql.NullBool{Bool: req.HasTerrace, Valid: true},
+		HasNotarialDeed:            sql.NullBool{Bool: req.HasNotarialDeed, Valid: true},
+		HasLandBooklet:             sql.NullBool{Bool: req.HasLandBooklet, Valid: true},
+		HasActInJointOwnership:     sql.NullBool{Bool: req.HasActInJointOwnership, Valid: true},
+		HasCertificateOfConformity: sql.NullBool{Bool: req.HasCertificateOfConformity, Valid: true},
+		HasDecision:                sql.NullBool{Bool: req.HasDecision, Valid: true},
+		HasConcession:              sql.NullBool{Bool: req.HasConcession, Valid: true},
+		HasStampedPaper:            sql.NullBool{Bool: req.HasStampedPaper, Valid: true},
+		HasBuildingPermit:          sql.NullBool{Bool: req.HasBuildingPermit, Valid: true},
+		HasOffPlanSalesContract:    sql.NullBool{Bool: req.HasOffPlanSalesContract, Valid: true},
+		BuildingFinishedType:       sql.NullString{String: req.BuildingFinishedType, Valid: req.BuildingFinishedType != ""},
+		AcceptablePaymentType:      sql.NullString{String: req.AcceptablePaymentType, Valid: req.AcceptablePaymentType != ""},
+		Furnished:                  sql.NullBool{Bool: req.Furnished, Valid: true},
+		YearBuilt:                  req.YearBuilt, // interface{}, handle nil or valid check outside
+		Description:                sql.NullString{String: req.Description, Valid: req.Description != ""},
+		ID:                         buildingId,
+		UserID:                     req.UserID,
+	})
+}
+
+func (s UpdateBuildingService) AddImages(ctx context.Context, req requests.UpdateBuildingImages, buildingId int64) error {
+	for i, header := range req.ImageHeaders {
+		imagePath, err := utils.SaveFile(req.ImageFiles[i], header, "uploads/", constants.MaxBuildingImageSize)
+		if err != nil {
+			return fmt.Errorf("failed to save image: %w", err)
+		}
+		err = s.Queries.CreateBuildingImage(ctx, db.CreateBuildingImageParams{
+			UserID:     req.UserID,
+			BuildingID: buildingId,
+			Path:       imagePath,
+			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
+			Size:       sql.NullInt64{Int64: header.Size, Valid: true},
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

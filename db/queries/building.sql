@@ -16,6 +16,10 @@ INSERT INTO buildings (
 INSERT INTO building_images (user_id, building_id, path, mimetype, size)
 VALUES (?, ?, ?, ?, ?);
 
+-- name: DeleteBuildingImage :exec
+DELETE FROM building_images
+WHERE building_id = ? AND user_id = ? AND id = ?;
+
 -- name: CreateBuildingDocument :exec
 INSERT INTO building_documents (user_id, building_id, path, mimetype, size, thumbnail)
 VALUES (?, ?, ?, ?, ?, ?);
@@ -36,4 +40,52 @@ WHERE building_id IN (sqlc.slice('building_ids'));
 
 -- name: GetBuilding :one
 SELECT * FROM buildings
-WHERE user_id = ? AND id = ?
+WHERE user_id = ? AND id = ?;
+
+-- name: UpdateBuilding :exec
+UPDATE buildings
+SET
+  title = ?,
+  status = ?,
+  location = ?,
+  wilaya = ?,
+  daira = ?,
+  building_type = ?,
+  is_promotion_building = ?,
+  is_residency = ?,
+  price = ?,
+  surface_total = ?,
+  surface_built = ?,
+  rooms = ?,
+  bathrooms = ?,
+  floors_total = ?,
+  parking_spaces = ?,
+  is_by_the_sea = ?,
+  has_water = ?,
+  has_electricity = ?,
+  has_gas = ?,
+  has_internet = ?,
+  has_garden = ?,
+  has_pool = ?,
+  has_elevator = ?,
+  has_central_heating = ?,
+  has_water_tank = ?,
+  has_air_conditioner = ?,
+  has_equipped_kitchen = ?,
+  has_terrace = ?,
+  has_notarial_deed = ?,
+  has_land_booklet = ?,
+  has_act_in_joint_ownership = ?,
+  has_certificate_of_conformity = ?,
+  has_decision = ?,
+  has_concession = ?,
+  has_stamped_paper = ?,
+  has_building_permit = ?,
+  has_off_plan_sales_contract = ?,
+  building_finished_type = ?,
+  acceptable_payment_type = ?,
+  furnished = ?,
+  year_built = ?,
+  description = ?,
+  updated_at = CURRENT_TIMESTAMP
+WHERE id = ? AND user_id = ?;

@@ -51,6 +51,9 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries) controll
 			GetBuildingService: &building_service.GetBuildingService{
 				Queries: queries,
 			},
+			UpdateBuildingService: &building_service.UpdateBuildingService{
+				Queries: queries,
+			},
 		},
 	}
 }

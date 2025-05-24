@@ -172,6 +172,22 @@ func (q *Queries) CreateBuildingImage(ctx context.Context, arg CreateBuildingIma
 	return err
 }
 
+const deleteBuildingImage = `-- name: DeleteBuildingImage :exec
+DELETE FROM building_images
+WHERE building_id = ? AND user_id = ? AND id = ?
+`
+
+type DeleteBuildingImageParams struct {
+	BuildingID int64 `json:"building_id"`
+	UserID     int64 `json:"user_id"`
+	ID         int64 `json:"id"`
+}
+
+func (q *Queries) DeleteBuildingImage(ctx context.Context, arg DeleteBuildingImageParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBuildingImage, arg.BuildingID, arg.UserID, arg.ID)
+	return err
+}
+
 const getBuilding = `-- name: GetBuilding :one
 SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at FROM buildings
 WHERE user_id = ? AND id = ?
@@ -412,4 +428,150 @@ func (q *Queries) ListPaginatedBuildings(ctx context.Context, arg ListPaginatedB
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBuilding = `-- name: UpdateBuilding :exec
+UPDATE buildings
+SET
+  title = ?,
+  status = ?,
+  location = ?,
+  wilaya = ?,
+  daira = ?,
+  building_type = ?,
+  is_promotion_building = ?,
+  is_residency = ?,
+  price = ?,
+  surface_total = ?,
+  surface_built = ?,
+  rooms = ?,
+  bathrooms = ?,
+  floors_total = ?,
+  parking_spaces = ?,
+  is_by_the_sea = ?,
+  has_water = ?,
+  has_electricity = ?,
+  has_gas = ?,
+  has_internet = ?,
+  has_garden = ?,
+  has_pool = ?,
+  has_elevator = ?,
+  has_central_heating = ?,
+  has_water_tank = ?,
+  has_air_conditioner = ?,
+  has_equipped_kitchen = ?,
+  has_terrace = ?,
+  has_notarial_deed = ?,
+  has_land_booklet = ?,
+  has_act_in_joint_ownership = ?,
+  has_certificate_of_conformity = ?,
+  has_decision = ?,
+  has_concession = ?,
+  has_stamped_paper = ?,
+  has_building_permit = ?,
+  has_off_plan_sales_contract = ?,
+  building_finished_type = ?,
+  acceptable_payment_type = ?,
+  furnished = ?,
+  year_built = ?,
+  description = ?,
+  updated_at = CURRENT_TIMESTAMP
+WHERE id = ? AND user_id = ?
+`
+
+type UpdateBuildingParams struct {
+	Title                      sql.NullString  `json:"title"`
+	Status                     sql.NullString  `json:"status"`
+	Location                   sql.NullString  `json:"location"`
+	Wilaya                     sql.NullString  `json:"wilaya"`
+	Daira                      sql.NullString  `json:"daira"`
+	BuildingType               sql.NullString  `json:"building_type"`
+	IsPromotionBuilding        sql.NullBool    `json:"is_promotion_building"`
+	IsResidency                sql.NullBool    `json:"is_residency"`
+	Price                      sql.NullInt64   `json:"price"`
+	SurfaceTotal               sql.NullFloat64 `json:"surface_total"`
+	SurfaceBuilt               sql.NullFloat64 `json:"surface_built"`
+	Rooms                      sql.NullInt64   `json:"rooms"`
+	Bathrooms                  sql.NullInt64   `json:"bathrooms"`
+	FloorsTotal                sql.NullInt64   `json:"floors_total"`
+	ParkingSpaces              sql.NullInt64   `json:"parking_spaces"`
+	IsByTheSea                 sql.NullBool    `json:"is_by_the_sea"`
+	HasWater                   sql.NullBool    `json:"has_water"`
+	HasElectricity             sql.NullBool    `json:"has_electricity"`
+	HasGas                     sql.NullBool    `json:"has_gas"`
+	HasInternet                sql.NullBool    `json:"has_internet"`
+	HasGarden                  sql.NullBool    `json:"has_garden"`
+	HasPool                    sql.NullBool    `json:"has_pool"`
+	HasElevator                sql.NullBool    `json:"has_elevator"`
+	HasCentralHeating          sql.NullBool    `json:"has_central_heating"`
+	HasWaterTank               sql.NullBool    `json:"has_water_tank"`
+	HasAirConditioner          sql.NullBool    `json:"has_air_conditioner"`
+	HasEquippedKitchen         sql.NullBool    `json:"has_equipped_kitchen"`
+	HasTerrace                 sql.NullBool    `json:"has_terrace"`
+	HasNotarialDeed            sql.NullBool    `json:"has_notarial_deed"`
+	HasLandBooklet             sql.NullBool    `json:"has_land_booklet"`
+	HasActInJointOwnership     sql.NullBool    `json:"has_act_in_joint_ownership"`
+	HasCertificateOfConformity sql.NullBool    `json:"has_certificate_of_conformity"`
+	HasDecision                sql.NullBool    `json:"has_decision"`
+	HasConcession              sql.NullBool    `json:"has_concession"`
+	HasStampedPaper            sql.NullBool    `json:"has_stamped_paper"`
+	HasBuildingPermit          sql.NullBool    `json:"has_building_permit"`
+	HasOffPlanSalesContract    sql.NullBool    `json:"has_off_plan_sales_contract"`
+	BuildingFinishedType       sql.NullString  `json:"building_finished_type"`
+	AcceptablePaymentType      sql.NullString  `json:"acceptable_payment_type"`
+	Furnished                  sql.NullBool    `json:"furnished"`
+	YearBuilt                  interface{}     `json:"year_built"`
+	Description                sql.NullString  `json:"description"`
+	ID                         int64           `json:"id"`
+	UserID                     int64           `json:"user_id"`
+}
+
+func (q *Queries) UpdateBuilding(ctx context.Context, arg UpdateBuildingParams) error {
+	_, err := q.db.ExecContext(ctx, updateBuilding,
+		arg.Title,
+		arg.Status,
+		arg.Location,
+		arg.Wilaya,
+		arg.Daira,
+		arg.BuildingType,
+		arg.IsPromotionBuilding,
+		arg.IsResidency,
+		arg.Price,
+		arg.SurfaceTotal,
+		arg.SurfaceBuilt,
+		arg.Rooms,
+		arg.Bathrooms,
+		arg.FloorsTotal,
+		arg.ParkingSpaces,
+		arg.IsByTheSea,
+		arg.HasWater,
+		arg.HasElectricity,
+		arg.HasGas,
+		arg.HasInternet,
+		arg.HasGarden,
+		arg.HasPool,
+		arg.HasElevator,
+		arg.HasCentralHeating,
+		arg.HasWaterTank,
+		arg.HasAirConditioner,
+		arg.HasEquippedKitchen,
+		arg.HasTerrace,
+		arg.HasNotarialDeed,
+		arg.HasLandBooklet,
+		arg.HasActInJointOwnership,
+		arg.HasCertificateOfConformity,
+		arg.HasDecision,
+		arg.HasConcession,
+		arg.HasStampedPaper,
+		arg.HasBuildingPermit,
+		arg.HasOffPlanSalesContract,
+		arg.BuildingFinishedType,
+		arg.AcceptablePaymentType,
+		arg.Furnished,
+		arg.YearBuilt,
+		arg.Description,
+		arg.ID,
+		arg.UserID,
+	)
+	return err
 }
