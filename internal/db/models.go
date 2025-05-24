@@ -8,6 +8,77 @@ import (
 	"database/sql"
 )
 
+type Building struct {
+	ID                         int64           `json:"id"`
+	UserID                     int64           `json:"user_id"`
+	Location                   sql.NullString  `json:"location"`
+	Title                      sql.NullString  `json:"title"`
+	Wilaya                     sql.NullString  `json:"wilaya"`
+	Daira                      sql.NullString  `json:"daira"`
+	BuildingType               sql.NullString  `json:"building_type"`
+	IsPromotionBuilding        sql.NullBool    `json:"is_promotion_building"`
+	IsResidency                sql.NullBool    `json:"is_residency"`
+	Status                     sql.NullString  `json:"status"`
+	Price                      sql.NullInt64   `json:"price"`
+	SurfaceTotal               sql.NullFloat64 `json:"surface_total"`
+	SurfaceBuilt               sql.NullFloat64 `json:"surface_built"`
+	Rooms                      sql.NullInt64   `json:"rooms"`
+	Bathrooms                  sql.NullInt64   `json:"bathrooms"`
+	FloorsTotal                sql.NullInt64   `json:"floors_total"`
+	ParkingSpaces              sql.NullInt64   `json:"parking_spaces"`
+	IsByTheSea                 sql.NullBool    `json:"is_by_the_sea"`
+	HasWater                   sql.NullBool    `json:"has_water"`
+	HasElectricity             sql.NullBool    `json:"has_electricity"`
+	HasGas                     sql.NullBool    `json:"has_gas"`
+	HasInternet                sql.NullBool    `json:"has_internet"`
+	HasGarden                  sql.NullBool    `json:"has_garden"`
+	HasPool                    sql.NullBool    `json:"has_pool"`
+	HasElevator                sql.NullBool    `json:"has_elevator"`
+	HasCentralHeating          sql.NullBool    `json:"has_central_heating"`
+	HasWaterTank               sql.NullBool    `json:"has_water_tank"`
+	HasAirConditioner          sql.NullBool    `json:"has_air_conditioner"`
+	HasEquippedKitchen         sql.NullBool    `json:"has_equipped_kitchen"`
+	HasTerrace                 sql.NullBool    `json:"has_terrace"`
+	HasNotarialDeed            sql.NullBool    `json:"has_notarial_deed"`
+	HasLandBooklet             sql.NullBool    `json:"has_land_booklet"`
+	HasActInJointOwnership     sql.NullBool    `json:"has_act_in_joint_ownership"`
+	HasCertificateOfConformity sql.NullBool    `json:"has_certificate_of_conformity"`
+	HasDecision                sql.NullBool    `json:"has_decision"`
+	HasConcession              sql.NullBool    `json:"has_concession"`
+	HasStampedPaper            sql.NullBool    `json:"has_stamped_paper"`
+	HasBuildingPermit          sql.NullBool    `json:"has_building_permit"`
+	HasOffPlanSalesContract    sql.NullBool    `json:"has_off_plan_sales_contract"`
+	BuildingFinishedType       sql.NullString  `json:"building_finished_type"`
+	AcceptablePaymentType      sql.NullString  `json:"acceptable_payment_type"`
+	Furnished                  sql.NullBool    `json:"furnished"`
+	YearBuilt                  interface{}     `json:"year_built"`
+	Description                sql.NullString  `json:"description"`
+	ShareableLink              sql.NullString  `json:"shareable_link"`
+	CreatedAt                  sql.NullTime    `json:"created_at"`
+	UpdatedAt                  sql.NullTime    `json:"updated_at"`
+}
+
+type BuildingDocument struct {
+	ID         int64          `json:"id"`
+	UserID     int64          `json:"user_id"`
+	BuildingID int64          `json:"building_id"`
+	Path       string         `json:"path"`
+	Mimetype   sql.NullString `json:"mimetype"`
+	Size       sql.NullInt64  `json:"size"`
+	Thumbnail  sql.NullString `json:"thumbnail"`
+	CreatedAt  sql.NullTime   `json:"created_at"`
+}
+
+type BuildingImage struct {
+	ID         int64          `json:"id"`
+	UserID     int64          `json:"user_id"`
+	BuildingID int64          `json:"building_id"`
+	Path       string         `json:"path"`
+	Mimetype   sql.NullString `json:"mimetype"`
+	Size       sql.NullInt64  `json:"size"`
+	CreatedAt  sql.NullTime   `json:"created_at"`
+}
+
 type Contact struct {
 	ID                     int64          `json:"id"`
 	UserID                 int64          `json:"user_id"`

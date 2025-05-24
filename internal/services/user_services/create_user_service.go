@@ -22,7 +22,7 @@ func (s *CreateUserService) Create(req requests.CreateUserRequest) (int64, strin
 	// (Optional) Save logo to disk or cloud and store filename
 	var logoPath string
 	if req.AgencyLogo != nil && req.LogoHeader != nil {
-		logoPath, err = utils.SaveImageFile(req.AgencyLogo, req.LogoHeader, "uploads", constants.AgencyLogoMaxSize)
+		logoPath, err = utils.SaveFile(req.AgencyLogo, req.LogoHeader, "uploads", constants.AgencyLogoMaxSize)
 		if err != nil {
 			return 0, "", err
 		}

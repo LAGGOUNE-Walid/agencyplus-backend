@@ -90,3 +90,136 @@ func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (s
 		arg.MaxBudget,
 	)
 }
+
+const deleteContact = `-- name: DeleteContact :exec
+DELETE FROM contacts
+WHERE id = ? AND user_id = ?
+`
+
+type DeleteContactParams struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+}
+
+func (q *Queries) DeleteContact(ctx context.Context, arg DeleteContactParams) error {
+	_, err := q.db.ExecContext(ctx, deleteContact, arg.ID, arg.UserID)
+	return err
+}
+
+const getAllContacts = `-- name: GetAllContacts :many
+SELECT
+  id,
+  user_id,
+  fullname,
+  phone,
+  email,
+  wilaya,
+  daira,
+  client_type,
+  searching_for,
+  preferred_location_type,
+  house_finishing,
+  renting_floor_looking_for,
+  is_married,
+  min_budget,
+  max_budget,
+  created_at,
+  updated_at
+FROM contacts
+WHERE user_id = ?
+ORDER BY id DESC
+`
+
+func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]Contact, error) {
+	rows, err := q.db.QueryContext(ctx, getAllContacts, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Contact{}
+	for rows.Next() {
+		var i Contact
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Fullname,
+			&i.Phone,
+			&i.Email,
+			&i.Wilaya,
+			&i.Daira,
+			&i.ClientType,
+			&i.SearchingFor,
+			&i.PreferredLocationType,
+			&i.HouseFinishing,
+			&i.RentingFloorLookingFor,
+			&i.IsMarried,
+			&i.MinBudget,
+			&i.MaxBudget,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getContact = `-- name: GetContact :one
+SELECT
+  id,
+  user_id,
+  fullname,
+  phone,
+  email,
+  wilaya,
+  daira,
+  client_type,
+  searching_for,
+  preferred_location_type,
+  house_finishing,
+  renting_floor_looking_for,
+  is_married,
+  min_budget,
+  max_budget,
+  created_at,
+  updated_at
+FROM contacts
+WHERE id = ? AND user_id = ?
+`
+
+type GetContactParams struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+}
+
+func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (Contact, error) {
+	row := q.db.QueryRowContext(ctx, getContact, arg.ID, arg.UserID)
+	var i Contact
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Fullname,
+		&i.Phone,
+		&i.Email,
+		&i.Wilaya,
+		&i.Daira,
+		&i.ClientType,
+		&i.SearchingFor,
+		&i.PreferredLocationType,
+		&i.HouseFinishing,
+		&i.RentingFloorLookingFor,
+		&i.IsMarried,
+		&i.MinBudget,
+		&i.MaxBudget,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

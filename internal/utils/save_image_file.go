@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,19 +18,14 @@ var (
 	ErrFileTooLarge = errors.New("file size exceeds limit")
 )
 
-// SaveImageFile saves an uploaded image file to year-month folder with random filename
-func SaveImageFile(file multipart.File, header *multipart.FileHeader, baseFolder string, maxSize int64) (string, error) {
+func SaveFile(file multipart.File, header *multipart.FileHeader, baseFolder string, maxSize int64) (string, error) {
 	defer file.Close()
 
 	if header.Size > maxSize {
 		return "", ErrFileTooLarge
 	}
 
-	// Validate file extension
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".gif" && ext != ".webp" {
-		return "", ErrNotAnImage
-	}
 
 	// Create subfolder by year-month
 	subfolder := time.Now().Format("2006-01") // e.g. "2025-05"
@@ -73,4 +69,22 @@ func generateRandomString(length int) (string, error) {
 		b[i] = charset[int(b[i])%len(charset)]
 	}
 	return string(b), nil
+}
+
+func GeneratePDFThumbnail(pdfPath string, outputImagePath string) error {
+	cmd := exec.Command(
+		"pdftoppm",
+		"-f", "1",
+		"-l", "1",
+		"-png",
+		pdfPath,
+		outputImagePath,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("command failed: %v, output: %s", err, string(output))
+	}
+
+	return nil
 }

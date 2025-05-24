@@ -114,6 +114,12 @@ func (s *Server) Run() {
 	mux.Handle("POST /auth", s.makeHttpHandler(s.Controller.UserController.Auth))
 	mux.Handle("PATCH /user", AuthMiddleware(OwnerGuardMiddleware(s.makeHttpHandler(s.Controller.UserController.UpdateUserHandler))))
 	mux.Handle("POST /contact", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.CreateContactHandler)))
+	mux.Handle("GET /contact", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.GetContactsHandler)))
+	mux.Handle("GET /contact/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.GetContactHandler)))
+	mux.Handle("DELETE /contact/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.DeleteContactHandler)))
+	mux.Handle("POST /building", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingHandler)))
+	mux.Handle("GET /building", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetBuildingsHandler)))
+	mux.Handle("GET /building/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetBuildingHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))

@@ -41,7 +41,7 @@ func (s *UpdateUserService) Update(ctx context.Context, req requests.UpdateUserR
 	}
 
 	if req.HasLogo {
-		logoPath, err := utils.SaveImageFile(req.AgencyLogo, req.LogoHeader, "uploads", constants.AgencyLogoMaxSize)
+		logoPath, err := utils.SaveFile(req.AgencyLogo, req.LogoHeader, "uploads", constants.AgencyLogoMaxSize)
 		if err != nil {
 			return err
 		}
