@@ -16,6 +16,6 @@ CREATE TABLE IF NOT EXISTS contacts (
     max_budget INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
+    deleted_at DATETIME,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );

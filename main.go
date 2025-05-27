@@ -53,6 +53,7 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries) controll
 			},
 			UpdateBuildingService: &building_service.UpdateBuildingService{
 				Queries: queries,
+				DB:      db,
 			},
 		},
 	}

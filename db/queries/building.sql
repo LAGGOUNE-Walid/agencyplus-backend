@@ -16,31 +16,49 @@ INSERT INTO buildings (
 INSERT INTO building_images (user_id, building_id, path, mimetype, size)
 VALUES (?, ?, ?, ?, ?);
 
+-- name: DeleteBuilding :exec
+UPDATE buildings SET deleted_at = CURRENT_TIMESTAMP
+WHERE user_id = ? AND id = ? AND deleted_at is NULL;
+
 -- name: DeleteBuildingImage :exec
-DELETE FROM building_images
-WHERE building_id = ? AND user_id = ? AND id = ?;
+UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL;
+
+-- name: DeleteBuildingImages :exec
+UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND deleted_at is NULL;
+
+
 
 -- name: CreateBuildingDocument :exec
 INSERT INTO building_documents (user_id, building_id, path, mimetype, size, thumbnail)
 VALUES (?, ?, ?, ?, ?, ?);
 
+-- name: DeleteBuildingDocument :exec
+UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL;
+
+-- name: DeleteBuildingDocuments :exec
+UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND deleted_at is NULL;
+
 -- name: ListPaginatedBuildings :many
 SELECT * FROM buildings
-WHERE user_id = ?
+WHERE user_id = ? AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: ListImagesForBuildingIDs :many
 SELECT * FROM building_images
-WHERE building_id IN (sqlc.slice('building_ids'));
+WHERE building_id IN (sqlc.slice('building_ids')) AND deleted_at is NULL;
 
 -- name: ListDocumentsForBuildingIDs :many
 SELECT * FROM building_documents
-WHERE building_id IN (sqlc.slice('building_ids'));
+WHERE building_id IN (sqlc.slice('building_ids')) AND deleted_at is NULL;
 
 -- name: GetBuilding :one
 SELECT * FROM buildings
-WHERE user_id = ? AND id = ?;
+WHERE user_id = ? AND id = ? AND deleted_at is NULL;
 
 -- name: UpdateBuilding :exec
 UPDATE buildings
@@ -88,4 +106,8 @@ SET
   year_built = ?,
   description = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ? AND user_id = ?;
+WHERE id = ? AND user_id = ? AND deleted_at is NULL;
+
+-- name: CreateBuildingVue :exec
+INSERT INTO building_vues(building_id, ip_address, user_agent)
+VALUES(?, ?, ?)

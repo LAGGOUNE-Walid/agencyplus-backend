@@ -172,9 +172,71 @@ func (q *Queries) CreateBuildingImage(ctx context.Context, arg CreateBuildingIma
 	return err
 }
 
+const createBuildingVue = `-- name: CreateBuildingVue :exec
+INSERT INTO building_vues(building_id, ip_address, user_agent)
+VALUES(?, ?, ?)
+`
+
+type CreateBuildingVueParams struct {
+	BuildingID int64  `json:"building_id"`
+	IpAddress  string `json:"ip_address"`
+	UserAgent  string `json:"user_agent"`
+}
+
+func (q *Queries) CreateBuildingVue(ctx context.Context, arg CreateBuildingVueParams) error {
+	_, err := q.db.ExecContext(ctx, createBuildingVue, arg.BuildingID, arg.IpAddress, arg.UserAgent)
+	return err
+}
+
+const deleteBuilding = `-- name: DeleteBuilding :exec
+UPDATE buildings SET deleted_at = CURRENT_TIMESTAMP
+WHERE user_id = ? AND id = ? AND deleted_at is NULL
+`
+
+type DeleteBuildingParams struct {
+	UserID int64 `json:"user_id"`
+	ID     int64 `json:"id"`
+}
+
+func (q *Queries) DeleteBuilding(ctx context.Context, arg DeleteBuildingParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBuilding, arg.UserID, arg.ID)
+	return err
+}
+
+const deleteBuildingDocument = `-- name: DeleteBuildingDocument :exec
+UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL
+`
+
+type DeleteBuildingDocumentParams struct {
+	BuildingID int64 `json:"building_id"`
+	UserID     int64 `json:"user_id"`
+	ID         int64 `json:"id"`
+}
+
+func (q *Queries) DeleteBuildingDocument(ctx context.Context, arg DeleteBuildingDocumentParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBuildingDocument, arg.BuildingID, arg.UserID, arg.ID)
+	return err
+}
+
+const deleteBuildingDocuments = `-- name: DeleteBuildingDocuments :exec
+UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND deleted_at is NULL
+`
+
+type DeleteBuildingDocumentsParams struct {
+	BuildingID int64 `json:"building_id"`
+	UserID     int64 `json:"user_id"`
+}
+
+func (q *Queries) DeleteBuildingDocuments(ctx context.Context, arg DeleteBuildingDocumentsParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBuildingDocuments, arg.BuildingID, arg.UserID)
+	return err
+}
+
 const deleteBuildingImage = `-- name: DeleteBuildingImage :exec
-DELETE FROM building_images
-WHERE building_id = ? AND user_id = ? AND id = ?
+UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingImageParams struct {
@@ -188,9 +250,24 @@ func (q *Queries) DeleteBuildingImage(ctx context.Context, arg DeleteBuildingIma
 	return err
 }
 
+const deleteBuildingImages = `-- name: DeleteBuildingImages :exec
+UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
+WHERE building_id = ? AND user_id = ? AND deleted_at is NULL
+`
+
+type DeleteBuildingImagesParams struct {
+	BuildingID int64 `json:"building_id"`
+	UserID     int64 `json:"user_id"`
+}
+
+func (q *Queries) DeleteBuildingImages(ctx context.Context, arg DeleteBuildingImagesParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBuildingImages, arg.BuildingID, arg.UserID)
+	return err
+}
+
 const getBuilding = `-- name: GetBuilding :one
-SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at FROM buildings
-WHERE user_id = ? AND id = ?
+SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
+WHERE user_id = ? AND id = ? AND deleted_at is NULL
 `
 
 type GetBuildingParams struct {
@@ -249,13 +326,14 @@ func (q *Queries) GetBuilding(ctx context.Context, arg GetBuildingParams) (Build
 		&i.ShareableLink,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const listDocumentsForBuildingIDs = `-- name: ListDocumentsForBuildingIDs :many
-SELECT id, user_id, building_id, path, mimetype, size, thumbnail, created_at FROM building_documents
-WHERE building_id IN (/*SLICE:building_ids*/?)
+SELECT id, user_id, building_id, path, mimetype, size, thumbnail, created_at, deleted_at FROM building_documents
+WHERE building_id IN (/*SLICE:building_ids*/?) AND deleted_at is NULL
 `
 
 func (q *Queries) ListDocumentsForBuildingIDs(ctx context.Context, buildingIds []int64) ([]BuildingDocument, error) {
@@ -286,6 +364,7 @@ func (q *Queries) ListDocumentsForBuildingIDs(ctx context.Context, buildingIds [
 			&i.Size,
 			&i.Thumbnail,
 			&i.CreatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -301,8 +380,8 @@ func (q *Queries) ListDocumentsForBuildingIDs(ctx context.Context, buildingIds [
 }
 
 const listImagesForBuildingIDs = `-- name: ListImagesForBuildingIDs :many
-SELECT id, user_id, building_id, path, mimetype, size, created_at FROM building_images
-WHERE building_id IN (/*SLICE:building_ids*/?)
+SELECT id, user_id, building_id, path, mimetype, size, created_at, deleted_at FROM building_images
+WHERE building_id IN (/*SLICE:building_ids*/?) AND deleted_at is NULL
 `
 
 func (q *Queries) ListImagesForBuildingIDs(ctx context.Context, buildingIds []int64) ([]BuildingImage, error) {
@@ -332,6 +411,7 @@ func (q *Queries) ListImagesForBuildingIDs(ctx context.Context, buildingIds []in
 			&i.Mimetype,
 			&i.Size,
 			&i.CreatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -347,8 +427,8 @@ func (q *Queries) ListImagesForBuildingIDs(ctx context.Context, buildingIds []in
 }
 
 const listPaginatedBuildings = `-- name: ListPaginatedBuildings :many
-SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at FROM buildings
-WHERE user_id = ?
+SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
+WHERE user_id = ? AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT ? OFFSET ?
 `
@@ -416,6 +496,7 @@ func (q *Queries) ListPaginatedBuildings(ctx context.Context, arg ListPaginatedB
 			&i.ShareableLink,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -476,7 +557,7 @@ SET
   year_built = ?,
   description = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ? AND user_id = ?
+WHERE id = ? AND user_id = ? AND deleted_at is NULL
 `
 
 type UpdateBuildingParams struct {

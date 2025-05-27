@@ -1,4 +1,4 @@
-CREATE TABLE building_documents (
+CREATE TABLE IF NOT EXISTS building_documents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id BIGINT NOT NULL,
     building_id BIGINT NOT NULL,
@@ -7,6 +7,7 @@ CREATE TABLE building_documents (
     size INT,
     thumbnail VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE
 );

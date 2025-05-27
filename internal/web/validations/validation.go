@@ -3,6 +3,7 @@ package validations
 import (
 	"fmt"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -29,6 +30,12 @@ func (ve ValidationErrors) IsEmpty() bool {
 
 func ValidateNonEmpty(value, field, errorMessage string, errs ValidationErrors) {
 	if strings.TrimSpace(value) == "" {
+		errs.Add(field, errorMessage)
+	}
+}
+func ValidateIp(value, field, errorMessage string, errs ValidationErrors) {
+	ip := net.ParseIP(value)
+	if ip == nil {
 		errs.Add(field, errorMessage)
 	}
 }

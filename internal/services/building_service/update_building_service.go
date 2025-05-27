@@ -8,10 +8,36 @@ import (
 	"logispro/internal/db"
 	"logispro/internal/utils"
 	"logispro/internal/web/requests"
+	"path/filepath"
 )
 
 type UpdateBuildingService struct {
 	Queries *db.Queries
+	DB      *sql.DB
+}
+
+func (s *UpdateBuildingService) Delete(ctx context.Context, userId int64, buildingId int64) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	qtx := s.Queries.WithTx(tx)
+
+	err = qtx.DeleteBuilding(ctx, db.DeleteBuildingParams{UserID: userId, ID: buildingId})
+	if err != nil {
+		return err
+	}
+	err = qtx.DeleteBuildingImages(ctx, db.DeleteBuildingImagesParams{UserID: userId, BuildingID: buildingId})
+	if err != nil {
+		return err
+	}
+	err = qtx.DeleteBuildingDocuments(ctx, db.DeleteBuildingDocumentsParams{UserID: userId, BuildingID: buildingId})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, req requests.UpdateBuildingRequest, buildingId int64) error {
@@ -63,7 +89,7 @@ func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, req request
 	})
 }
 
-func (s UpdateBuildingService) AddImages(ctx context.Context, req requests.UpdateBuildingImages, buildingId int64) error {
+func (s *UpdateBuildingService) AddImages(ctx context.Context, req requests.UpdateBuildingImages, buildingId int64) error {
 	for i, header := range req.ImageHeaders {
 		imagePath, err := utils.SaveFile(req.ImageFiles[i], header, "uploads/", constants.MaxBuildingImageSize)
 		if err != nil {
@@ -81,4 +107,59 @@ func (s UpdateBuildingService) AddImages(ctx context.Context, req requests.Updat
 		}
 	}
 	return nil
+}
+
+func (s *UpdateBuildingService) DeleteImage(ctx context.Context, userId int64, buildingId int64, imageId int64) error {
+	return s.Queries.DeleteBuildingImage(ctx, db.DeleteBuildingImageParams{
+		BuildingID: buildingId,
+		UserID:     userId,
+		ID:         imageId,
+	})
+}
+
+func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.UpdateBuildingDocuments, buildingId int64) error {
+	for i, header := range req.DocumentHeaders {
+		docPath, err := utils.SaveFile(req.DocumentFiles[i], header, "uploads/", constants.MaxBuildingDocumentSize)
+		if err != nil {
+			return fmt.Errorf("failed to save document: %w", err)
+		}
+		sourceAbsPath, err := filepath.Abs(fmt.Sprintf("uploads/%s", docPath))
+		if err != nil {
+			return err
+		}
+
+		thumbPath := fmt.Sprintf("%s.png", sourceAbsPath)
+		err = utils.GeneratePDFThumbnail(sourceAbsPath, thumbPath)
+		if err != nil {
+			return fmt.Errorf("failed to generate thumbnail: %w", err)
+		}
+		err = s.Queries.CreateBuildingDocument(ctx, db.CreateBuildingDocumentParams{
+			UserID:     req.UserID,
+			BuildingID: buildingId,
+			Path:       docPath,
+			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
+			Size:       sql.NullInt64{Int64: header.Size, Valid: true},
+			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s.png", docPath), Valid: true},
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *UpdateBuildingService) DeleteDocument(ctx context.Context, userId int64, buildingId int64, documentId int64) error {
+	return s.Queries.DeleteBuildingDocument(ctx, db.DeleteBuildingDocumentParams{
+		BuildingID: buildingId,
+		UserID:     userId,
+		ID:         documentId,
+	})
+}
+
+func (s *UpdateBuildingService) AddVue(ctx context.Context, req requests.CreateBuildingVueRequest) error {
+	return s.Queries.CreateBuildingVue(ctx, db.CreateBuildingVueParams{
+		BuildingID: req.BuildingId,
+		IpAddress:  req.IpAddress.String(),
+		UserAgent:  req.UserAgent,
+	})
 }

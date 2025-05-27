@@ -87,7 +87,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at FROM users WHERE email = ? LIMIT 1
+SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users WHERE email = ? AND deleted_at is NULL LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -107,6 +107,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -116,7 +117,7 @@ UPDATE users
 SET
   agency_logo = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE id = ? AND deleted_at is NULL
 `
 
 type UpdateLogoParams struct {
@@ -134,7 +135,7 @@ UPDATE users
 SET
   password = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE id = ? AND deleted_at is NULL
 `
 
 type UpdatePasswordParams struct {
@@ -158,7 +159,7 @@ SET
   wilaya = ?,
   daira = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE id = ? AND deleted_at is NULL
 `
 
 type UpdateUserParams struct {

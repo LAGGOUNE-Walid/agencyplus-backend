@@ -56,6 +56,7 @@ type Building struct {
 	ShareableLink              sql.NullString  `json:"shareable_link"`
 	CreatedAt                  sql.NullTime    `json:"created_at"`
 	UpdatedAt                  sql.NullTime    `json:"updated_at"`
+	DeletedAt                  sql.NullTime    `json:"deleted_at"`
 }
 
 type BuildingDocument struct {
@@ -67,6 +68,7 @@ type BuildingDocument struct {
 	Size       sql.NullInt64  `json:"size"`
 	Thumbnail  sql.NullString `json:"thumbnail"`
 	CreatedAt  sql.NullTime   `json:"created_at"`
+	DeletedAt  sql.NullTime   `json:"deleted_at"`
 }
 
 type BuildingImage struct {
@@ -77,6 +79,15 @@ type BuildingImage struct {
 	Mimetype   sql.NullString `json:"mimetype"`
 	Size       sql.NullInt64  `json:"size"`
 	CreatedAt  sql.NullTime   `json:"created_at"`
+	DeletedAt  sql.NullTime   `json:"deleted_at"`
+}
+
+type BuildingVue struct {
+	ID         int64        `json:"id"`
+	BuildingID int64        `json:"building_id"`
+	ViewedAt   sql.NullTime `json:"viewed_at"`
+	IpAddress  string       `json:"ip_address"`
+	UserAgent  string       `json:"user_agent"`
 }
 
 type Contact struct {
@@ -97,6 +108,7 @@ type Contact struct {
 	MaxBudget              sql.NullInt64  `json:"max_budget"`
 	CreatedAt              sql.NullTime   `json:"created_at"`
 	UpdatedAt              sql.NullTime   `json:"updated_at"`
+	DeletedAt              sql.NullTime   `json:"deleted_at"`
 }
 
 type User struct {
@@ -113,4 +125,5 @@ type User struct {
 	Password      string         `json:"password"`
 	CreatedAt     sql.NullTime   `json:"created_at"`
 	UpdatedAt     sql.NullTime   `json:"updated_at"`
+	DeletedAt     sql.NullTime   `json:"deleted_at"`
 }

@@ -17,21 +17,21 @@ SET
   wilaya = ?,
   daira = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
+WHERE id = ? AND deleted_at is NULL;
 
 -- name: UpdatePassword :exec
 UPDATE users
 SET
   password = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
+WHERE id = ? AND deleted_at is NULL;
 
 -- name: UpdateLogo :exec
 UPDATE users
 SET
   agency_logo = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
+WHERE id = ? AND deleted_at is NULL;
 
 -- name: CountUsersByEmail :one
 SELECT COUNT(*) FROM users WHERE email = ?;
@@ -40,7 +40,7 @@ SELECT COUNT(*) FROM users WHERE email = ?;
 SELECT COUNT(*) FROM users WHERE phone = ?;
 
 -- name: GetUserByEmail :one
-SELECT * FROM users WHERE email = ? LIMIT 1;
+SELECT * FROM users WHERE email = ? AND deleted_at is NULL LIMIT 1;
 
 
 -- name: CountUsersByEmailExcludingID :one

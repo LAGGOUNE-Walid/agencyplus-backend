@@ -130,15 +130,35 @@ WHERE user_id = ?
 ORDER BY id DESC
 `
 
-func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]Contact, error) {
+type GetAllContactsRow struct {
+	ID                     int64          `json:"id"`
+	UserID                 int64          `json:"user_id"`
+	Fullname               string         `json:"fullname"`
+	Phone                  sql.NullString `json:"phone"`
+	Email                  sql.NullString `json:"email"`
+	Wilaya                 sql.NullString `json:"wilaya"`
+	Daira                  sql.NullString `json:"daira"`
+	ClientType             sql.NullString `json:"client_type"`
+	SearchingFor           sql.NullString `json:"searching_for"`
+	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
+	HouseFinishing         sql.NullString `json:"house_finishing"`
+	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
+	IsMarried              sql.NullBool   `json:"is_married"`
+	MinBudget              sql.NullInt64  `json:"min_budget"`
+	MaxBudget              sql.NullInt64  `json:"max_budget"`
+	CreatedAt              sql.NullTime   `json:"created_at"`
+	UpdatedAt              sql.NullTime   `json:"updated_at"`
+}
+
+func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]GetAllContactsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getAllContacts, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Contact{}
+	items := []GetAllContactsRow{}
 	for rows.Next() {
-		var i Contact
+		var i GetAllContactsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -199,9 +219,29 @@ type GetContactParams struct {
 	UserID int64 `json:"user_id"`
 }
 
-func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (Contact, error) {
+type GetContactRow struct {
+	ID                     int64          `json:"id"`
+	UserID                 int64          `json:"user_id"`
+	Fullname               string         `json:"fullname"`
+	Phone                  sql.NullString `json:"phone"`
+	Email                  sql.NullString `json:"email"`
+	Wilaya                 sql.NullString `json:"wilaya"`
+	Daira                  sql.NullString `json:"daira"`
+	ClientType             sql.NullString `json:"client_type"`
+	SearchingFor           sql.NullString `json:"searching_for"`
+	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
+	HouseFinishing         sql.NullString `json:"house_finishing"`
+	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
+	IsMarried              sql.NullBool   `json:"is_married"`
+	MinBudget              sql.NullInt64  `json:"min_budget"`
+	MaxBudget              sql.NullInt64  `json:"max_budget"`
+	CreatedAt              sql.NullTime   `json:"created_at"`
+	UpdatedAt              sql.NullTime   `json:"updated_at"`
+}
+
+func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (GetContactRow, error) {
 	row := q.db.QueryRowContext(ctx, getContact, arg.ID, arg.UserID)
-	var i Contact
+	var i GetContactRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,

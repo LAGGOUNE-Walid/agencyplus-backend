@@ -28,45 +28,50 @@ type ApiHandlerFunc func(w http.ResponseWriter, r *http.Request) response_types.
 
 func (s *Server) makeHttpHandler(handler ApiHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 500<<20) // 500mb
-		err := r.ParseMultipartForm(100 << 20)           // 100 mb
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(map[string]map[string]any{
-				"data": {
-					"error": fmt.Sprintf("failed to parse multipart form: %w", err),
-				},
-			})
-		} else {
-			resp := handler(w, r)
+		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch || r.Method == http.MethodDelete {
+			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+				r.Body = http.MaxBytesReader(w, r.Body, 500<<20) // 500mb
+				err := r.ParseMultipartForm(100 << 20)           // 100 mb
+				if err != nil {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(400)
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(resp.StatusCode)
-
-			if resp.Error != nil {
-				if resp.StatusCode == http.StatusInternalServerError {
-					s.Logger.Error("error", slog.Any("content", resp.Error))
 					json.NewEncoder(w).Encode(map[string]map[string]any{
 						"data": {
-							"error": "internal server error",
+							"error": fmt.Sprintf("failed to parse multipart form: %w", err),
 						},
 					})
-				} else {
-					json.NewEncoder(w).Encode(map[string]map[string]any{
-						"data": {
-							"error": resp.Error.Error(),
-						},
-					})
+					return
 				}
-			} else {
-				json.NewEncoder(w).Encode(map[string]any{
-					"data": resp.Content,
-				})
 			}
 		}
+		resp := handler(w, r)
 
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+
+		if resp.Error != nil {
+			if resp.StatusCode == http.StatusInternalServerError {
+				s.Logger.Error("error", slog.Any("content", resp.Error))
+				json.NewEncoder(w).Encode(map[string]map[string]any{
+					"data": {
+						"error": "internal server error",
+					},
+				})
+			} else {
+				json.NewEncoder(w).Encode(map[string]map[string]any{
+					"data": {
+						"error": resp.Error.Error(),
+					},
+				})
+			}
+		} else {
+			json.NewEncoder(w).Encode(map[string]any{
+				"data": resp.Content,
+			})
+		}
 	}
+
 }
 func (s *Server) LoggingMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -135,9 +140,14 @@ func (s *Server) Run() {
 	mux.Handle("DELETE /contact/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.DeleteContactHandler)))
 	mux.Handle("POST /building", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingHandler)))
 	mux.Handle("GET /building", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetBuildingsHandler)))
+	mux.Handle("GET /building/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetBuildingHandler)))
 	mux.Handle("PATCH /building/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.UpdateBuildingHandler)))
+	mux.Handle("DELETE /building/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.DeleteBuildingHandler)))
 	mux.Handle("POST /building/{id}/images", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingImagesHandler)))
-	mux.Handle("DELETE /building/{id}/:imageId", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.UpdateBuildingHandler)))
+	mux.Handle("DELETE /building/{id}/images/{imageId}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.DeleteBuildingImageHandler)))
+	mux.Handle("POST /building/{id}/documents", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingDocumentsHandler)))
+	mux.Handle("DELETE /building/{id}/documents/{documentId}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.DeleteBuildingDocumentHandler)))
+	mux.Handle("POST /building-vue/{id}", s.makeHttpHandler(s.Controller.BuildingController.AddVueHandler))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))
