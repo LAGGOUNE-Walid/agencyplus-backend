@@ -15,7 +15,7 @@ coverage:
 fmt:
 	go fmt ./...
 lint:
-	staticcheck ./...
+	staticcheck ./
 clean:
 	rm -rf $(BIN_DIR) coverage.out
 deps:

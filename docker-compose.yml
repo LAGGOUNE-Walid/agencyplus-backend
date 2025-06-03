@@ -1,0 +1,41 @@
+services:
+  # app:
+  #   build: .
+  #   container_name: logispro-app
+  #   ports:
+  #     - "8085:8085"
+  #   volumes:
+  #     - .:/app
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - logispro-net
+  sms_preparer:
+    build: 
+      context: .
+      dockerfile: cmd/Dockerfile
+    command: go run cmd/sms_worker_prepare.go
+    depends_on:
+      - rabbitmq
+  sms_send:
+    build: 
+      context: .
+      dockerfile: cmd/Dockerfile
+    command: go run cmd/sms_worker_send.go
+    depends_on:
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: logispro-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: toor
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - logispro-net
+
+networks:
+  logispro-net:
+    driver: bridge

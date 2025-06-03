@@ -148,6 +148,7 @@ func (s *Server) Run() {
 	mux.Handle("POST /building/{id}/documents", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.CreateBuildingDocumentsHandler)))
 	mux.Handle("DELETE /building/{id}/documents/{documentId}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.DeleteBuildingDocumentHandler)))
 	mux.Handle("POST /building-vue/{id}", s.makeHttpHandler(s.Controller.BuildingController.AddVueHandler))
+	mux.Handle("POST /sms", AuthMiddleware(s.makeHttpHandler(s.Controller.SmsController.CreateSmsHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))

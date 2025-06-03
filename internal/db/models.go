@@ -111,6 +111,30 @@ type Contact struct {
 	DeletedAt              sql.NullTime   `json:"deleted_at"`
 }
 
+type SmsQueue struct {
+	ID              int64          `json:"id"`
+	UserID          int64          `json:"user_id"`
+	Title           string         `json:"title"`
+	Content         string         `json:"content"`
+	FromNumber      string         `json:"from_number"`
+	Status          sql.NullString `json:"status"`
+	TotalRecipients int64          `json:"total_recipients"`
+	SentCount       sql.NullInt64  `json:"sent_count"`
+	FailedCount     sql.NullInt64  `json:"failed_count"`
+	CreatedAt       sql.NullTime   `json:"created_at"`
+	ScheduledAt     sql.NullTime   `json:"scheduled_at"`
+	SentAt          sql.NullTime   `json:"sent_at"`
+}
+
+type SmsQueueContact struct {
+	ID          int64          `json:"id"`
+	SmsQueueID  int64          `json:"sms_queue_id"`
+	PhoneNumber string         `json:"phone_number"`
+	Status      sql.NullString `json:"status"`
+	Error       sql.NullString `json:"error"`
+	SentAt      sql.NullTime   `json:"sent_at"`
+}
+
 type User struct {
 	ID            int64          `json:"id"`
 	Fullname      string         `json:"fullname"`

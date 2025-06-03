@@ -16,9 +16,7 @@ func ValidateCreateContactRequest(r *http.Request, q *db.Queries, ctx context.Co
 	phone := r.FormValue("phone")
 
 	ValidateNonEmpty(fullname, "fullname", "required", errs)
-	if fullname != "" {
-		ValidateMinLength(fullname, "fullname", 3, errs)
-	}
+	ValidateMinLength(fullname, "fullname", 3, errs)
 
 	ValidateNonEmpty(email, "email", "required", errs)
 	if email != "" && !strings.Contains(email, "@") {

@@ -42,6 +42,9 @@ SELECT COUNT(*) FROM users WHERE phone = ?;
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = ? AND deleted_at is NULL LIMIT 1;
 
+-- name: GetUserById :one
+SELECT * FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1;
+
 
 -- name: CountUsersByEmailExcludingID :one
 SELECT COUNT(*) FROM users

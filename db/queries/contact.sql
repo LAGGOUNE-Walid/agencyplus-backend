@@ -74,3 +74,12 @@ ORDER BY id DESC;
 -- name: DeleteContact :exec
 DELETE FROM contacts
 WHERE id = ? AND user_id = ?;
+
+-- name: GetContactsById :many
+SELECT
+  id,
+  user_id,
+  phone
+FROM contacts
+WHERE user_id = ? AND id IN (sqlc.slice('ids'))
+ORDER BY id DESC;

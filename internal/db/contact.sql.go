@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 const countContactsByEmail = `-- name: CountContactsByEmail :one
@@ -262,4 +263,59 @@ func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (GetCont
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getContactsById = `-- name: GetContactsById :many
+SELECT
+  id,
+  user_id,
+  phone
+FROM contacts
+WHERE user_id = ? AND id IN (/*SLICE:ids*/?)
+ORDER BY id DESC
+`
+
+type GetContactsByIdParams struct {
+	UserID int64   `json:"user_id"`
+	Ids    []int64 `json:"ids"`
+}
+
+type GetContactsByIdRow struct {
+	ID     int64          `json:"id"`
+	UserID int64          `json:"user_id"`
+	Phone  sql.NullString `json:"phone"`
+}
+
+func (q *Queries) GetContactsById(ctx context.Context, arg GetContactsByIdParams) ([]GetContactsByIdRow, error) {
+	query := getContactsById
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.UserID)
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetContactsByIdRow{}
+	for rows.Next() {
+		var i GetContactsByIdRow
+		if err := rows.Scan(&i.ID, &i.UserID, &i.Phone); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

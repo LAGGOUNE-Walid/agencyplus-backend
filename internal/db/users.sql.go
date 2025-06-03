@@ -112,6 +112,32 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
+const getUserById = `-- name: GetUserById :one
+SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Fullname,
+		&i.Role,
+		&i.Email,
+		&i.Phone,
+		&i.AgencyName,
+		&i.AgencyAddress,
+		&i.AgencyLogo,
+		&i.Wilaya,
+		&i.Daira,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const updateLogo = `-- name: UpdateLogo :exec
 UPDATE users
 SET

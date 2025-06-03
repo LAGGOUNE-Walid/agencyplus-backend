@@ -1,6 +1,7 @@
 package validations
 
 import (
+	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net"
@@ -66,5 +67,16 @@ func ValidateFileIsImage(file multipart.File, header *multipart.FileHeader, maxS
 		Seek(int64, int) (int64, error)
 	}); ok {
 		seeker.Seek(0, 0)
+	}
+}
+
+func ValidJsonOfIntegers(value, field, errorMessage string, errs ValidationErrors) {
+	if value != "" {
+		var ids []int64
+		if err := json.Unmarshal([]byte(value), &ids); err != nil {
+			errs.Add(field, errorMessage)
+		} else if len(ids) == 0 {
+			errs.Add(field, errorMessage)
+		}
 	}
 }
