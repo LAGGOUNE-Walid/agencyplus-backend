@@ -49,3 +49,6 @@ SELECT * FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1;
 -- name: CountUsersByEmailExcludingID :one
 SELECT COUNT(*) FROM users
 WHERE email = ? AND id != ?;
+
+-- name: GetUserAgents :many
+SELECT * from users where root_id = ?

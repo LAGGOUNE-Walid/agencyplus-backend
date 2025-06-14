@@ -8,6 +8,7 @@ import (
 	"logispro/internal/services/building_service"
 	"logispro/internal/services/contact_service"
 	"logispro/internal/services/sms_service"
+	"logispro/internal/services/task_service"
 	"logispro/internal/services/user_services"
 	"logispro/internal/sqlite"
 	"logispro/internal/web"
@@ -15,6 +16,7 @@ import (
 	"logispro/internal/web/controllers/building"
 	"logispro/internal/web/controllers/contact"
 	"logispro/internal/web/controllers/sms"
+	"logispro/internal/web/controllers/task"
 	"logispro/internal/web/controllers/user"
 	"os"
 
@@ -62,6 +64,17 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries, rabbitMq
 			CreateSmsService: &sms_service.CreateSmsService{
 				Queries:      queries,
 				RabbitMqConn: rabbitMqConn,
+			},
+		},
+		TaskController: &task.TaskController{
+			CreateTaskService: &task_service.CreateTaskService{
+				Queries: queries,
+			},
+			GetTasksService: &task_service.GetTasksService{
+				Queries: queries,
+			},
+			UpdateTaskService: &task_service.UpdateTaskService{
+				Queries: queries,
 			},
 		},
 	}

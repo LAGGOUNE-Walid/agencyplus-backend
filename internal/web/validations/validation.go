@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type ValidationErrors map[string][]string
@@ -34,6 +35,14 @@ func ValidateNonEmpty(value, field, errorMessage string, errs ValidationErrors) 
 		errs.Add(field, errorMessage)
 	}
 }
+
+func ValidateDate(value, field, errorMessage string, errs ValidationErrors) {
+	_, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		errs.Add(field, errorMessage)
+	}
+}
+
 func ValidateIp(value, field, errorMessage string, errs ValidationErrors) {
 	ip := net.ParseIP(value)
 	if ip == nil {

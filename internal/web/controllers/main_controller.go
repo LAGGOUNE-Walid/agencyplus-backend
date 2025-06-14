@@ -4,6 +4,7 @@ import (
 	"logispro/internal/web/controllers/building"
 	"logispro/internal/web/controllers/contact"
 	"logispro/internal/web/controllers/sms"
+	"logispro/internal/web/controllers/task"
 	"logispro/internal/web/controllers/user"
 )
 
@@ -12,4 +13,5 @@ type Controller struct {
 	ContactController  *contact.ContactController
 	BuildingController *building.BuildingController
 	SmsController      *sms.SmsController
+	TaskController     *task.TaskController
 }

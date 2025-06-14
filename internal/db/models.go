@@ -135,6 +135,19 @@ type SmsQueueContact struct {
 	SentAt      sql.NullTime   `json:"sent_at"`
 }
 
+type Task struct {
+	ID          int64         `json:"id"`
+	ToID        int64         `json:"to_id"`
+	Title       string        `json:"title"`
+	Content     interface{}   `json:"content"`
+	IsCompleted sql.NullBool  `json:"is_completed"`
+	DueDate     sql.NullTime  `json:"due_date"`
+	CreatedAt   sql.NullTime  `json:"created_at"`
+	UpdatedAt   sql.NullTime  `json:"updated_at"`
+	DeletedAt   sql.NullTime  `json:"deleted_at"`
+	RootID      sql.NullInt64 `json:"root_id"`
+}
+
 type User struct {
 	ID            int64          `json:"id"`
 	Fullname      string         `json:"fullname"`
@@ -150,4 +163,5 @@ type User struct {
 	CreatedAt     sql.NullTime   `json:"created_at"`
 	UpdatedAt     sql.NullTime   `json:"updated_at"`
 	DeletedAt     sql.NullTime   `json:"deleted_at"`
+	RootID        sql.NullInt64  `json:"root_id"`
 }
