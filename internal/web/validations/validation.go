@@ -43,6 +43,24 @@ func ValidateDate(value, field, errorMessage string, errs ValidationErrors) {
 	}
 }
 
+func ValidateDateTime(value, field, errorMessage string, errs ValidationErrors) {
+	_, err := time.Parse("2006-01-02 15:04:05", value)
+	if err != nil {
+		errs.Add(field, errorMessage)
+	}
+}
+func ValidateDateTimeInFuture(value, field, errorMessage string, errs ValidationErrors) {
+	datetime, err := time.Parse("2006-01-02 15:04:05", value)
+	if err != nil {
+		errs.Add(field, errorMessage)
+	}
+	now := time.Now()
+	if !now.Before(datetime) || now.Equal(datetime) {
+		errs.Add(field, errorMessage)
+	}
+
+}
+
 func ValidateIp(value, field, errorMessage string, errs ValidationErrors) {
 	ip := net.ParseIP(value)
 	if ip == nil {

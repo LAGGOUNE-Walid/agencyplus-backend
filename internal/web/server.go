@@ -156,6 +156,9 @@ func (s *Server) Run() {
 	mux.Handle("PATCH /report/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.UpdateReportHandler)))
 	mux.Handle("DELETE /report/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.DeleteReportHandler)))
 	mux.Handle("GET /reports", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.GetReportsHandler)))
+	mux.Handle("POST /calendar_events", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.CreateCalendarEventHandler)))
+	mux.Handle("DELETE /calendar_events/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.DeleteCalendarEventHandler)))
+	mux.Handle("GET /calendar_events", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.GetCalendarEventsHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))

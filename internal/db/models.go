@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Building struct {
@@ -88,6 +89,17 @@ type BuildingVue struct {
 	ViewedAt   sql.NullTime `json:"viewed_at"`
 	IpAddress  string       `json:"ip_address"`
 	UserAgent  string       `json:"user_agent"`
+}
+
+type CalendarEvent struct {
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	Title     string       `json:"title"`
+	Content   string       `json:"content"`
+	ForDate   time.Time    `json:"for_date"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
 }
 
 type Contact struct {
