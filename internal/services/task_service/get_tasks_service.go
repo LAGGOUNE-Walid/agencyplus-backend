@@ -2,7 +2,6 @@ package task_service
 
 import (
 	"context"
-	"database/sql"
 	"logispro/internal/constants"
 	"logispro/internal/db"
 )
@@ -16,7 +15,7 @@ func (s *GetTasksService) GetForCurrentUser(userId int64, role int64, ctx contex
 		return s.Queries.GetCurrentUserTasks(ctx, userId)
 	}
 	return s.Queries.GetRootUserCreatedTasks(ctx, db.GetRootUserCreatedTasksParams{
-		RootID: sql.NullInt64{Int64: userId, Valid: true},
+		RootID: userId,
 		ToID:   userId,
 	})
 }

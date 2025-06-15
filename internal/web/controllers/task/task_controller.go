@@ -1,7 +1,6 @@
 package task
 
 import (
-	"database/sql"
 	"fmt"
 	"logispro/internal/constants"
 	"logispro/internal/services/task_service"
@@ -33,7 +32,7 @@ func (c *TaskController) CreateTaskHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	userAgents, err := c.CreateTaskService.Queries.GetUserAgents(r.Context(), sql.NullInt64{Int64: userId, Valid: true})
+	userAgents, err := c.CreateTaskService.Queries.GetUserAgents(r.Context(), userId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Content:    nil,

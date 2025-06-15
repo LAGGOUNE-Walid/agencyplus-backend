@@ -7,6 +7,7 @@ import (
 	"logispro/internal/db"
 	"logispro/internal/services/building_service"
 	"logispro/internal/services/contact_service"
+	"logispro/internal/services/report_service"
 	"logispro/internal/services/sms_service"
 	"logispro/internal/services/task_service"
 	"logispro/internal/services/user_services"
@@ -15,6 +16,7 @@ import (
 	"logispro/internal/web/controllers"
 	"logispro/internal/web/controllers/building"
 	"logispro/internal/web/controllers/contact"
+	"logispro/internal/web/controllers/report"
 	"logispro/internal/web/controllers/sms"
 	"logispro/internal/web/controllers/task"
 	"logispro/internal/web/controllers/user"
@@ -74,6 +76,11 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries, rabbitMq
 				Queries: queries,
 			},
 			UpdateTaskService: &task_service.UpdateTaskService{
+				Queries: queries,
+			},
+		},
+		ReportController: &report.ReportController{
+			ReportService: &report_service.ReportService{
 				Queries: queries,
 			},
 		},

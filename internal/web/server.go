@@ -152,6 +152,10 @@ func (s *Server) Run() {
 	mux.Handle("POST /task", AuthMiddleware(s.makeHttpHandler(s.Controller.TaskController.CreateTaskHandler)))
 	mux.Handle("GET /tasks", AuthMiddleware(s.makeHttpHandler(s.Controller.TaskController.GetTasksHandler)))
 	mux.Handle("PATCH /task/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.TaskController.UpdateTaskHandler)))
+	mux.Handle("POST /report", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.CreateReportHandler)))
+	mux.Handle("PATCH /report/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.UpdateReportHandler)))
+	mux.Handle("DELETE /report/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.DeleteReportHandler)))
+	mux.Handle("GET /reports", AuthMiddleware(s.makeHttpHandler(s.Controller.ReportController.GetReportsHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))

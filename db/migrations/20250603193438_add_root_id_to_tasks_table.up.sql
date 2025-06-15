@@ -1,1 +1,0 @@
-ALTER TABLE tasks ADD COLUMN root_id INTEGER;

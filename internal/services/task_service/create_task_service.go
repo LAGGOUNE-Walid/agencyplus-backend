@@ -17,6 +17,6 @@ func (s *CreateTaskService) Create(req requests.CreateTaskRequest, rootId int64,
 		Title:   req.Title,
 		Content: req.Content,
 		DueDate: sql.NullTime{Time: req.Date, Valid: !req.Date.IsZero()},
-		RootID:  sql.NullInt64{Int64: rootId, Valid: true},
+		RootID:  rootId,
 	})
 }

@@ -16,15 +16,15 @@ INSERT INTO tasks (
 ) VALUES (
     ?, ?, ?, ?, ?
 )
-RETURNING id, to_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at, root_id
+RETURNING id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at
 `
 
 type CreateTaskParams struct {
-	ToID    int64         `json:"to_id"`
-	Title   string        `json:"title"`
-	Content interface{}   `json:"content"`
-	DueDate sql.NullTime  `json:"due_date"`
-	RootID  sql.NullInt64 `json:"root_id"`
+	ToID    int64        `json:"to_id"`
+	Title   string       `json:"title"`
+	Content interface{}  `json:"content"`
+	DueDate sql.NullTime `json:"due_date"`
+	RootID  int64        `json:"root_id"`
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
@@ -39,6 +39,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	err := row.Scan(
 		&i.ID,
 		&i.ToID,
+		&i.RootID,
 		&i.Title,
 		&i.Content,
 		&i.IsCompleted,
@@ -46,13 +47,12 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.RootID,
 	)
 	return i, err
 }
 
 const getCurrentUserTasks = `-- name: GetCurrentUserTasks :many
-SELECT id, to_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at, root_id from tasks where to_id = ?
+SELECT id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at from tasks where to_id = ?
 `
 
 func (q *Queries) GetCurrentUserTasks(ctx context.Context, toID int64) ([]Task, error) {
@@ -67,6 +67,7 @@ func (q *Queries) GetCurrentUserTasks(ctx context.Context, toID int64) ([]Task, 
 		if err := rows.Scan(
 			&i.ID,
 			&i.ToID,
+			&i.RootID,
 			&i.Title,
 			&i.Content,
 			&i.IsCompleted,
@@ -74,7 +75,6 @@ func (q *Queries) GetCurrentUserTasks(ctx context.Context, toID int64) ([]Task, 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-			&i.RootID,
 		); err != nil {
 			return nil, err
 		}
@@ -90,12 +90,12 @@ func (q *Queries) GetCurrentUserTasks(ctx context.Context, toID int64) ([]Task, 
 }
 
 const getRootUserCreatedTasks = `-- name: GetRootUserCreatedTasks :many
-SELECT id, to_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at, root_id from tasks where root_id = ? OR to_id = ?
+SELECT id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at from tasks where root_id = ? OR to_id = ?
 `
 
 type GetRootUserCreatedTasksParams struct {
-	RootID sql.NullInt64 `json:"root_id"`
-	ToID   int64         `json:"to_id"`
+	RootID int64 `json:"root_id"`
+	ToID   int64 `json:"to_id"`
 }
 
 func (q *Queries) GetRootUserCreatedTasks(ctx context.Context, arg GetRootUserCreatedTasksParams) ([]Task, error) {
@@ -110,6 +110,7 @@ func (q *Queries) GetRootUserCreatedTasks(ctx context.Context, arg GetRootUserCr
 		if err := rows.Scan(
 			&i.ID,
 			&i.ToID,
+			&i.RootID,
 			&i.Title,
 			&i.Content,
 			&i.IsCompleted,
@@ -117,7 +118,6 @@ func (q *Queries) GetRootUserCreatedTasks(ctx context.Context, arg GetRootUserCr
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-			&i.RootID,
 		); err != nil {
 			return nil, err
 		}
@@ -141,9 +141,9 @@ WHERE id = ? AND (to_id = ? OR root_id = ?)
 `
 
 type MarkTaskAsDoneParams struct {
-	ID     int64         `json:"id"`
-	ToID   int64         `json:"to_id"`
-	RootID sql.NullInt64 `json:"root_id"`
+	ID     int64 `json:"id"`
+	ToID   int64 `json:"to_id"`
+	RootID int64 `json:"root_id"`
 }
 
 func (q *Queries) MarkTaskAsDone(ctx context.Context, arg MarkTaskAsDoneParams) error {

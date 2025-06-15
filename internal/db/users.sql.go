@@ -87,10 +87,10 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 }
 
 const getUserAgents = `-- name: GetUserAgents :many
-SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at, root_id from users where root_id = ?
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at from users where root_id = ?
 `
 
-func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]User, error) {
+func (q *Queries) GetUserAgents(ctx context.Context, rootID int64) ([]User, error) {
 	rows, err := q.db.QueryContext(ctx, getUserAgents, rootID)
 	if err != nil {
 		return nil, err
@@ -103,6 +103,7 @@ func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]Us
 			&i.ID,
 			&i.Fullname,
 			&i.Role,
+			&i.RootID,
 			&i.Email,
 			&i.Phone,
 			&i.AgencyName,
@@ -114,7 +115,6 @@ func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]Us
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-			&i.RootID,
 		); err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]Us
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at, root_id FROM users WHERE email = ? AND deleted_at is NULL LIMIT 1
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users WHERE email = ? AND deleted_at is NULL LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -140,6 +140,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.Fullname,
 		&i.Role,
+		&i.RootID,
 		&i.Email,
 		&i.Phone,
 		&i.AgencyName,
@@ -151,13 +152,12 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.RootID,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, fullname, role, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at, root_id FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
@@ -167,6 +167,7 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
 		&i.ID,
 		&i.Fullname,
 		&i.Role,
+		&i.RootID,
 		&i.Email,
 		&i.Phone,
 		&i.AgencyName,
@@ -178,7 +179,6 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.RootID,
 	)
 	return i, err
 }

@@ -28,8 +28,6 @@ WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL;
 UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
 WHERE building_id = ? AND user_id = ? AND deleted_at is NULL;
 
-
-
 -- name: CreateBuildingDocument :exec
 INSERT INTO building_documents (user_id, building_id, path, mimetype, size, thumbnail)
 VALUES (?, ?, ?, ?, ?, ?);

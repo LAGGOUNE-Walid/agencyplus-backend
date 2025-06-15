@@ -111,6 +111,16 @@ type Contact struct {
 	DeletedAt              sql.NullTime   `json:"deleted_at"`
 }
 
+type Report struct {
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	Title     string       `json:"title"`
+	Content   string       `json:"content"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
+}
+
 type SmsQueue struct {
 	ID              int64          `json:"id"`
 	UserID          int64          `json:"user_id"`
@@ -136,22 +146,23 @@ type SmsQueueContact struct {
 }
 
 type Task struct {
-	ID          int64         `json:"id"`
-	ToID        int64         `json:"to_id"`
-	Title       string        `json:"title"`
-	Content     interface{}   `json:"content"`
-	IsCompleted sql.NullBool  `json:"is_completed"`
-	DueDate     sql.NullTime  `json:"due_date"`
-	CreatedAt   sql.NullTime  `json:"created_at"`
-	UpdatedAt   sql.NullTime  `json:"updated_at"`
-	DeletedAt   sql.NullTime  `json:"deleted_at"`
-	RootID      sql.NullInt64 `json:"root_id"`
+	ID          int64        `json:"id"`
+	ToID        int64        `json:"to_id"`
+	RootID      int64        `json:"root_id"`
+	Title       string       `json:"title"`
+	Content     interface{}  `json:"content"`
+	IsCompleted sql.NullBool `json:"is_completed"`
+	DueDate     sql.NullTime `json:"due_date"`
+	CreatedAt   sql.NullTime `json:"created_at"`
+	UpdatedAt   sql.NullTime `json:"updated_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
 }
 
 type User struct {
 	ID            int64          `json:"id"`
 	Fullname      string         `json:"fullname"`
 	Role          int64          `json:"role"`
+	RootID        int64          `json:"root_id"`
 	Email         string         `json:"email"`
 	Phone         string         `json:"phone"`
 	AgencyName    string         `json:"agency_name"`
@@ -163,5 +174,4 @@ type User struct {
 	CreatedAt     sql.NullTime   `json:"created_at"`
 	UpdatedAt     sql.NullTime   `json:"updated_at"`
 	DeletedAt     sql.NullTime   `json:"deleted_at"`
-	RootID        sql.NullInt64  `json:"root_id"`
 }

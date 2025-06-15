@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     to_id INTEGER NOT NULL REFERENCES users(id),
+    root_id INTEGER NOT NULL REFERENCES users(id),
     title VARCHAR(250) NOT NULL,
     content TEXT(1250) NOT NULL,
     is_completed BOOLEAN DEFAULT 0,

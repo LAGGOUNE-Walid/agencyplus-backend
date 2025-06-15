@@ -2,7 +2,6 @@ package task_service
 
 import (
 	"context"
-	"database/sql"
 	"logispro/internal/db"
 )
 
@@ -14,6 +13,6 @@ func (s *UpdateTaskService) MarkAsDone(id int64, userId int64, ctx context.Conte
 	return s.Queries.MarkTaskAsDone(ctx, db.MarkTaskAsDoneParams{
 		ID:     id,
 		ToID:   userId,
-		RootID: sql.NullInt64{Int64: userId, Valid: true},
+		RootID: userId,
 	})
 }
