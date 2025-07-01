@@ -1,1 +1,0 @@
-DROP TABLE IF exists sms_queue_contacts

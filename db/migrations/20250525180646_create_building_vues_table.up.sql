@@ -1,7 +1,0 @@
-CREATE TABLE IF NOT EXISTS building_vues (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    building_id BIGINT NOT NULL,
-    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address TEXT NOT NULL,
-    user_agent TEXT NOT NULL
-);

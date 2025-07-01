@@ -1,29 +1,78 @@
 services:
-  # app:
-  #   build: .
-  #   container_name: logispro-app
-  #   ports:
-  #     - "8085:8085"
-  #   volumes:
-  #     - .:/app
-  #   depends_on:
-  #     - rabbitmq
-  #   networks:
-  #     - logispro-net
-  sms_preparer:
-    build: 
-      context: .
-      dockerfile: cmd/Dockerfile
-    command: go run cmd/sms_worker_prepare.go
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=3
+    networks:
+      - logispro-net
+  redis:
+    image: redis:latest
+    command: redis-server --requirepass root
+    environment:
+      - REDIS_PASSWORD=root
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data
+    networks:
+      - logispro-net
+  mysql:
+    image: mysql:latest
+    ports:
+      - "3304:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootmaster
+      MYSQL_DATABASE: logispro
+      # MYSQL_USER: rootz 
+      # MYSQL_PASSWORD: root
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - logispro-net
+  gorse:
+    image: zhenghaoz/gorse-in-one
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - 8086:8086   # gRPC port
+      - 8088:8088   # HTTP port
+    environment:
+      # Use Redis as cache storage backend.
+      GORSE_CACHE_STORE: redis://:root@redis:6379
+      # Use MySQL as data storage backend.
+      GORSE_DATA_STORE: mysql://root:rootmaster@tcp(mysql:3306)/logispro?parseTime=true
+      GORSE_DASHBOARD_USER_NAME: root
+      GORSE_DASHBOARD_PASSWORD: root
+      GORSE_TABLE_PREFIX: gorse_
+    command: >
+      -c /etc/gorse/config.toml 
+      --log-path /var/log/gorse/master.log 
+      --cache-path /var/lib/gorse/master_cache.data
+    volumes:
+      # Mount the configuration file.
+      - ./gorse/config.toml:/etc/gorse/config.toml
+    networks:
+      - logispro-net
+  app:
+    build: .
+    container_name: logispro-app
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./src:/app
     depends_on:
       - rabbitmq
-  sms_send:
-    build: 
-      context: .
-      dockerfile: cmd/Dockerfile
-    command: go run cmd/sms_worker_send.go
-    depends_on:
-      - rabbitmq
+    networks:
+      - logispro-net
+    command: ./bin/logispro
   rabbitmq:
     image: rabbitmq:4-management
     container_name: logispro-rabbitmq
@@ -35,6 +84,20 @@ services:
       - "15672:15672"
     networks:
       - logispro-net
+  # sms_preparer:
+  #   build: .
+  #   command: ./bin/sms_worker_prepare
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - logispro-net
+  # sms_send:
+  #   build: .
+  #   command: ./bin/sms_worker_send
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - logispro-net
 
 networks:
   logispro-net:

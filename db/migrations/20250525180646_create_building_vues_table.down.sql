@@ -1,1 +1,0 @@
-DROP table if exists building_vues
