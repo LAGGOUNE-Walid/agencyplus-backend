@@ -1,5 +1,5 @@
 go.mod
-uploads/*
+src/uploads/*
 mysql_data/*
 redis_data/*
 ollama_data/*
