@@ -64,7 +64,7 @@ func (s *CreateSmsService) Create(req requests.CreateSmsRequest, userId int64, c
 		"sms_id": sms.ID,
 	}
 	msg, _ := json.Marshal(msgMap)
-	err = rmq.Publish("sms_prepare", msg)
+	err = rmq.Publish("sms_prepare", msg, amqp.Table{})
 	if err != nil {
 		return sms, err
 	}

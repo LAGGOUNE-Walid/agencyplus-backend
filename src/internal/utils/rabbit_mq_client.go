@@ -24,7 +24,7 @@ func (r *RabbitMQ) DeclareQueue(name string) error {
 	return err
 }
 
-func (r *RabbitMQ) Publish(queueName string, body []byte) error {
+func (r *RabbitMQ) Publish(queueName string, body []byte, headers amqp.Table) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return r.Channel.PublishWithContext(ctx,
@@ -35,6 +35,21 @@ func (r *RabbitMQ) Publish(queueName string, body []byte) error {
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
+			Headers:     headers,
 		},
 	)
+}
+
+func (r *RabbitMQ) GetRetryCount(headers amqp.Table) int {
+	if val, ok := headers["x-retry"]; ok {
+		switch v := val.(type) {
+		case int32:
+			return int(v)
+		case int64:
+			return int(v)
+		case int:
+			return v
+		}
+	}
+	return 0
 }

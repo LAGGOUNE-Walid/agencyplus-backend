@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS buildings (
     building_finished_type VARCHAR(50), -- fini, semi fini, carcasse
     acceptable_payment_type VARCHAR(100), -- tranché, credit bank
     furnished BOOLEAN DEFAULT FALSE,
-    year_built YEAR,
+    year_built INT,
     description TEXT,
     shareable_link TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

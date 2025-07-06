@@ -68,7 +68,7 @@ type CreateBuildingParams struct {
 	BuildingFinishedType       sql.NullString  `json:"building_finished_type"`
 	AcceptablePaymentType      sql.NullString  `json:"acceptable_payment_type"`
 	Furnished                  sql.NullBool    `json:"furnished"`
-	YearBuilt                  interface{}     `json:"year_built"`
+	YearBuilt                  sql.NullInt64   `json:"year_built"`
 	Description                sql.NullString  `json:"description"`
 	ShareableLink              sql.NullString  `json:"shareable_link"`
 }
@@ -329,6 +329,36 @@ func (q *Queries) GetBuilding(ctx context.Context, arg GetBuildingParams) (Build
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const getBuildingEmbeddings = `-- name: GetBuildingEmbeddings :one
+SELECT id, building_id, embedding, created_at FROM building_embeddings where building_id = ?
+`
+
+func (q *Queries) GetBuildingEmbeddings(ctx context.Context, buildingID int64) (BuildingEmbedding, error) {
+	row := q.db.QueryRowContext(ctx, getBuildingEmbeddings, buildingID)
+	var i BuildingEmbedding
+	err := row.Scan(
+		&i.ID,
+		&i.BuildingID,
+		&i.Embedding,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const insertEmbeddings = `-- name: InsertEmbeddings :exec
+INSERT INTO building_embeddings(building_id, embedding, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+`
+
+type InsertEmbeddingsParams struct {
+	BuildingID int64  `json:"building_id"`
+	Embedding  string `json:"embedding"`
+}
+
+func (q *Queries) InsertEmbeddings(ctx context.Context, arg InsertEmbeddingsParams) error {
+	_, err := q.db.ExecContext(ctx, insertEmbeddings, arg.BuildingID, arg.Embedding)
+	return err
 }
 
 const listDocumentsForBuildingIDs = `-- name: ListDocumentsForBuildingIDs :many
@@ -601,7 +631,7 @@ type UpdateBuildingParams struct {
 	BuildingFinishedType       sql.NullString  `json:"building_finished_type"`
 	AcceptablePaymentType      sql.NullString  `json:"acceptable_payment_type"`
 	Furnished                  sql.NullBool    `json:"furnished"`
-	YearBuilt                  interface{}     `json:"year_built"`
+	YearBuilt                  sql.NullInt64   `json:"year_built"`
 	Description                sql.NullString  `json:"description"`
 	ID                         int64           `json:"id"`
 	UserID                     int64           `json:"user_id"`

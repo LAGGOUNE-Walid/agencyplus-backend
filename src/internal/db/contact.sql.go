@@ -49,28 +49,46 @@ INSERT INTO contacts (
   is_married,
   min_budget,
   max_budget,
+  preferred_building_types,
+  preferred_features,
+  min_rooms,
+  max_rooms,
+  min_surface,
+  max_surface,
+  furnished,
+  acceptable_payment_type,
+  max_year_built,
   created_at,
   updated_at
 ) VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 )
 `
 
 type CreateContactParams struct {
-	UserID                 int64          `json:"user_id"`
-	Fullname               string         `json:"fullname"`
-	Phone                  sql.NullString `json:"phone"`
-	Email                  sql.NullString `json:"email"`
-	Wilaya                 sql.NullString `json:"wilaya"`
-	Daira                  sql.NullString `json:"daira"`
-	ClientType             sql.NullString `json:"client_type"`
-	SearchingFor           sql.NullString `json:"searching_for"`
-	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
-	HouseFinishing         sql.NullString `json:"house_finishing"`
-	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
-	IsMarried              sql.NullBool   `json:"is_married"`
-	MinBudget              sql.NullInt64  `json:"min_budget"`
-	MaxBudget              sql.NullInt64  `json:"max_budget"`
+	UserID                 int64           `json:"user_id"`
+	Fullname               string          `json:"fullname"`
+	Phone                  sql.NullString  `json:"phone"`
+	Email                  sql.NullString  `json:"email"`
+	Wilaya                 sql.NullString  `json:"wilaya"`
+	Daira                  sql.NullString  `json:"daira"`
+	ClientType             sql.NullString  `json:"client_type"`
+	SearchingFor           sql.NullString  `json:"searching_for"`
+	PreferredLocationType  sql.NullString  `json:"preferred_location_type"`
+	HouseFinishing         sql.NullString  `json:"house_finishing"`
+	RentingFloorLookingFor sql.NullString  `json:"renting_floor_looking_for"`
+	IsMarried              sql.NullBool    `json:"is_married"`
+	MinBudget              sql.NullInt64   `json:"min_budget"`
+	MaxBudget              sql.NullInt64   `json:"max_budget"`
+	PreferredBuildingTypes sql.NullString  `json:"preferred_building_types"`
+	PreferredFeatures      sql.NullString  `json:"preferred_features"`
+	MinRooms               sql.NullInt64   `json:"min_rooms"`
+	MaxRooms               sql.NullInt64   `json:"max_rooms"`
+	MinSurface             sql.NullFloat64 `json:"min_surface"`
+	MaxSurface             sql.NullFloat64 `json:"max_surface"`
+	Furnished              sql.NullBool    `json:"furnished"`
+	AcceptablePaymentType  sql.NullString  `json:"acceptable_payment_type"`
+	MaxYearBuilt           sql.NullInt64   `json:"max_year_built"`
 }
 
 func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (sql.Result, error) {
@@ -89,6 +107,15 @@ func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (s
 		arg.IsMarried,
 		arg.MinBudget,
 		arg.MaxBudget,
+		arg.PreferredBuildingTypes,
+		arg.PreferredFeatures,
+		arg.MinRooms,
+		arg.MaxRooms,
+		arg.MinSurface,
+		arg.MaxSurface,
+		arg.Furnished,
+		arg.AcceptablePaymentType,
+		arg.MaxYearBuilt,
 	)
 }
 
@@ -194,23 +221,7 @@ func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]GetAllCon
 
 const getContact = `-- name: GetContact :one
 SELECT
-  id,
-  user_id,
-  fullname,
-  phone,
-  email,
-  wilaya,
-  daira,
-  client_type,
-  searching_for,
-  preferred_location_type,
-  house_finishing,
-  renting_floor_looking_for,
-  is_married,
-  min_budget,
-  max_budget,
-  created_at,
-  updated_at
+  id, user_id, fullname, phone, email, wilaya, daira, client_type, searching_for, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, min_budget, max_budget, created_at, updated_at, deleted_at, preferred_building_types, preferred_features, min_rooms, max_rooms, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built
 FROM contacts
 WHERE id = ? AND user_id = ?
 `
@@ -220,29 +231,9 @@ type GetContactParams struct {
 	UserID int64 `json:"user_id"`
 }
 
-type GetContactRow struct {
-	ID                     int64          `json:"id"`
-	UserID                 int64          `json:"user_id"`
-	Fullname               string         `json:"fullname"`
-	Phone                  sql.NullString `json:"phone"`
-	Email                  sql.NullString `json:"email"`
-	Wilaya                 sql.NullString `json:"wilaya"`
-	Daira                  sql.NullString `json:"daira"`
-	ClientType             sql.NullString `json:"client_type"`
-	SearchingFor           sql.NullString `json:"searching_for"`
-	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
-	HouseFinishing         sql.NullString `json:"house_finishing"`
-	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
-	IsMarried              sql.NullBool   `json:"is_married"`
-	MinBudget              sql.NullInt64  `json:"min_budget"`
-	MaxBudget              sql.NullInt64  `json:"max_budget"`
-	CreatedAt              sql.NullTime   `json:"created_at"`
-	UpdatedAt              sql.NullTime   `json:"updated_at"`
-}
-
-func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (GetContactRow, error) {
+func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (Contact, error) {
 	row := q.db.QueryRowContext(ctx, getContact, arg.ID, arg.UserID)
-	var i GetContactRow
+	var i Contact
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -261,6 +252,32 @@ func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (GetCont
 		&i.MaxBudget,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.PreferredBuildingTypes,
+		&i.PreferredFeatures,
+		&i.MinRooms,
+		&i.MaxRooms,
+		&i.MinSurface,
+		&i.MaxSurface,
+		&i.Furnished,
+		&i.AcceptablePaymentType,
+		&i.MaxYearBuilt,
+	)
+	return i, err
+}
+
+const getContactEmbeddings = `-- name: GetContactEmbeddings :one
+SELECT id, contact_id, embedding, created_at FROM contact_embeddings where contact_id = ?
+`
+
+func (q *Queries) GetContactEmbeddings(ctx context.Context, contactID int64) (ContactEmbedding, error) {
+	row := q.db.QueryRowContext(ctx, getContactEmbeddings, contactID)
+	var i ContactEmbedding
+	err := row.Scan(
+		&i.ID,
+		&i.ContactID,
+		&i.Embedding,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -318,4 +335,56 @@ func (q *Queries) GetContactsById(ctx context.Context, arg GetContactsByIdParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const getContactsWithEmbeddings = `-- name: GetContactsWithEmbeddings :many
+SELECT
+  contacts.id,
+  contact_embeddings.embedding
+FROM contacts
+RIGHT JOIN contact_embeddings ON contact_embeddings.contact_id = contacts.id
+WHERE user_id = ?
+ORDER BY contacts.id DESC
+`
+
+type GetContactsWithEmbeddingsRow struct {
+	ID        sql.NullInt64 `json:"id"`
+	Embedding string        `json:"embedding"`
+}
+
+func (q *Queries) GetContactsWithEmbeddings(ctx context.Context, userID int64) ([]GetContactsWithEmbeddingsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContactsWithEmbeddings, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetContactsWithEmbeddingsRow{}
+	for rows.Next() {
+		var i GetContactsWithEmbeddingsRow
+		if err := rows.Scan(&i.ID, &i.Embedding); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertContactEmbeddings = `-- name: InsertContactEmbeddings :exec
+INSERT INTO contact_embeddings(contact_id, embedding, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+`
+
+type InsertContactEmbeddingsParams struct {
+	ContactID int64  `json:"contact_id"`
+	Embedding string `json:"embedding"`
+}
+
+func (q *Queries) InsertContactEmbeddings(ctx context.Context, arg InsertContactEmbeddingsParams) error {
+	_, err := q.db.ExecContext(ctx, insertContactEmbeddings, arg.ContactID, arg.Embedding)
+	return err
 }

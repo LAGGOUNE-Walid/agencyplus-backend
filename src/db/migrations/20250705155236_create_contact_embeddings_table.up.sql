@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS contact_embeddings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contact_id INTEGER NOT NULL,
+    embedding TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE
+);

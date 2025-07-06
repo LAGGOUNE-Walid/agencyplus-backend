@@ -159,6 +159,7 @@ func (s *Server) Run() {
 	mux.Handle("POST /calendar_events", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.CreateCalendarEventHandler)))
 	mux.Handle("DELETE /calendar_events/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.DeleteCalendarEventHandler)))
 	mux.Handle("GET /calendar_events", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.GetCalendarEventsHandler)))
+	mux.Handle("GET /get-building-recommendations/{building_id}", AuthMiddleware(s.makeHttpHandler(s.Controller.RecommenderController.GetForBuildingHandler)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))

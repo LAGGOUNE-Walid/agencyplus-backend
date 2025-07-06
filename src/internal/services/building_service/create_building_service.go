@@ -3,6 +3,7 @@ package building_service
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"logispro/internal/constants"
 	"logispro/internal/db"
@@ -10,11 +11,19 @@ import (
 	"logispro/internal/web/requests"
 	"mime/multipart"
 	"path/filepath"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type CreateBuildingService struct {
-	Queries *db.Queries
-	DB      *sql.DB
+	Queries      *db.Queries
+	DB           *sql.DB
+	RabbitMqConn *amqp.Connection
+}
+
+type BuildingEmbedding struct {
+	ID     int64
+	Params db.CreateBuildingParams
 }
 
 func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateBuildingRequest, imageHeaders []*multipart.FileHeader, documentHeaders []*multipart.FileHeader) (int64, error) {
@@ -61,7 +70,7 @@ func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateB
 		BuildingFinishedType:       sql.NullString{String: req.BuildingFinishedType, Valid: req.BuildingFinishedType != ""},
 		AcceptablePaymentType:      sql.NullString{String: req.AcceptablePaymentType, Valid: req.AcceptablePaymentType != ""},
 		Furnished:                  sql.NullBool{Bool: req.Furnished, Valid: true},
-		YearBuilt:                  req.YearBuilt, // interface{}, handle nil or valid check outside
+		YearBuilt:                  sql.NullInt64{Int64: req.YearBuilt, Valid: req.YearBuilt != 0},
 		Description:                sql.NullString{String: req.Description, Valid: req.Description != ""},
 		ShareableLink:              sql.NullString{String: req.ShareableLink, Valid: req.ShareableLink != ""},
 	}
@@ -143,6 +152,27 @@ func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateB
 		utils.DeleteFiles(filesToDelete...)
 		return 0, err
 	}
+	err = s.EnqueueBuildingEmbeddingGeneration(arg, lastID)
+	if err != nil {
+		return 0, err
+	}
 
 	return lastID, nil
+}
+
+func (s *CreateBuildingService) EnqueueBuildingEmbeddingGeneration(params db.CreateBuildingParams, id int64) error {
+	ch, err := s.RabbitMqConn.Channel()
+	if err != nil {
+		return err
+	}
+	defer ch.Close()
+	var buildingEmbedding BuildingEmbedding
+	buildingEmbedding.ID = id
+	buildingEmbedding.Params = params
+	rmq := &utils.RabbitMQ{Conn: s.RabbitMqConn, Channel: ch}
+	data, err := json.Marshal(buildingEmbedding)
+	if err != nil {
+		return err
+	}
+	return rmq.Publish("created_buildings", data, amqp.Table{"x-retry": 1})
 }

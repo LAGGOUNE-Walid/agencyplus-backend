@@ -52,7 +52,7 @@ type Building struct {
 	BuildingFinishedType       sql.NullString  `json:"building_finished_type"`
 	AcceptablePaymentType      sql.NullString  `json:"acceptable_payment_type"`
 	Furnished                  sql.NullBool    `json:"furnished"`
-	YearBuilt                  interface{}     `json:"year_built"`
+	YearBuilt                  sql.NullInt64   `json:"year_built"`
 	Description                sql.NullString  `json:"description"`
 	ShareableLink              sql.NullString  `json:"shareable_link"`
 	CreatedAt                  sql.NullTime    `json:"created_at"`
@@ -70,6 +70,13 @@ type BuildingDocument struct {
 	Thumbnail  sql.NullString `json:"thumbnail"`
 	CreatedAt  sql.NullTime   `json:"created_at"`
 	DeletedAt  sql.NullTime   `json:"deleted_at"`
+}
+
+type BuildingEmbedding struct {
+	ID         int64        `json:"id"`
+	BuildingID int64        `json:"building_id"`
+	Embedding  string       `json:"embedding"`
+	CreatedAt  sql.NullTime `json:"created_at"`
 }
 
 type BuildingImage struct {
@@ -103,24 +110,40 @@ type CalendarEvent struct {
 }
 
 type Contact struct {
-	ID                     int64          `json:"id"`
-	UserID                 int64          `json:"user_id"`
-	Fullname               string         `json:"fullname"`
-	Phone                  sql.NullString `json:"phone"`
-	Email                  sql.NullString `json:"email"`
-	Wilaya                 sql.NullString `json:"wilaya"`
-	Daira                  sql.NullString `json:"daira"`
-	ClientType             sql.NullString `json:"client_type"`
-	SearchingFor           sql.NullString `json:"searching_for"`
-	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
-	HouseFinishing         sql.NullString `json:"house_finishing"`
-	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
-	IsMarried              sql.NullBool   `json:"is_married"`
-	MinBudget              sql.NullInt64  `json:"min_budget"`
-	MaxBudget              sql.NullInt64  `json:"max_budget"`
-	CreatedAt              sql.NullTime   `json:"created_at"`
-	UpdatedAt              sql.NullTime   `json:"updated_at"`
-	DeletedAt              sql.NullTime   `json:"deleted_at"`
+	ID                     int64           `json:"id"`
+	UserID                 int64           `json:"user_id"`
+	Fullname               string          `json:"fullname"`
+	Phone                  sql.NullString  `json:"phone"`
+	Email                  sql.NullString  `json:"email"`
+	Wilaya                 sql.NullString  `json:"wilaya"`
+	Daira                  sql.NullString  `json:"daira"`
+	ClientType             sql.NullString  `json:"client_type"`
+	SearchingFor           sql.NullString  `json:"searching_for"`
+	PreferredLocationType  sql.NullString  `json:"preferred_location_type"`
+	HouseFinishing         sql.NullString  `json:"house_finishing"`
+	RentingFloorLookingFor sql.NullString  `json:"renting_floor_looking_for"`
+	IsMarried              sql.NullBool    `json:"is_married"`
+	MinBudget              sql.NullInt64   `json:"min_budget"`
+	MaxBudget              sql.NullInt64   `json:"max_budget"`
+	CreatedAt              sql.NullTime    `json:"created_at"`
+	UpdatedAt              sql.NullTime    `json:"updated_at"`
+	DeletedAt              sql.NullTime    `json:"deleted_at"`
+	PreferredBuildingTypes sql.NullString  `json:"preferred_building_types"`
+	PreferredFeatures      sql.NullString  `json:"preferred_features"`
+	MinRooms               sql.NullInt64   `json:"min_rooms"`
+	MaxRooms               sql.NullInt64   `json:"max_rooms"`
+	MinSurface             sql.NullFloat64 `json:"min_surface"`
+	MaxSurface             sql.NullFloat64 `json:"max_surface"`
+	Furnished              sql.NullBool    `json:"furnished"`
+	AcceptablePaymentType  sql.NullString  `json:"acceptable_payment_type"`
+	MaxYearBuilt           sql.NullInt64   `json:"max_year_built"`
+}
+
+type ContactEmbedding struct {
+	ID        int64        `json:"id"`
+	ContactID int64        `json:"contact_id"`
+	Embedding string       `json:"embedding"`
+	CreatedAt sql.NullTime `json:"created_at"`
 }
 
 type Report struct {

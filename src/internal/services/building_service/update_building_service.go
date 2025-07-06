@@ -82,7 +82,7 @@ func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, req request
 		BuildingFinishedType:       sql.NullString{String: req.BuildingFinishedType, Valid: req.BuildingFinishedType != ""},
 		AcceptablePaymentType:      sql.NullString{String: req.AcceptablePaymentType, Valid: req.AcceptablePaymentType != ""},
 		Furnished:                  sql.NullBool{Bool: req.Furnished, Valid: true},
-		YearBuilt:                  req.YearBuilt, // interface{}, handle nil or valid check outside
+		YearBuilt:                  sql.NullInt64{Int64: req.YearBuilt, Valid: req.YearBuilt != 0},
 		Description:                sql.NullString{String: req.Description, Valid: req.Description != ""},
 		ID:                         buildingId,
 		UserID:                     req.UserID,

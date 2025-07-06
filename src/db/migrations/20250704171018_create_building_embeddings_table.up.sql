@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS building_embeddings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    building_id INTEGER NOT NULL,
+    embedding TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE
+);

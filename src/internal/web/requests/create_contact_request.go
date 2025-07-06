@@ -15,14 +15,23 @@ type CreateContactRequest struct {
 	Email                  string
 	Wilaya                 string
 	Daira                  string
-	ClientType             string
-	SearchingFor           string
-	PreferredLocationType  string
-	HouseFinishing         string
+	ClientType             string // e.g., "buyer", "tenant"
+	SearchingFor           string // e.g., "villa a alger", "appartement a bordj el bahri"
+	PreferredLocationType  string // e.g., "urban a alger", "suburban a blida"
 	RentingFloorLookingFor string
 	IsMarried              bool
-	MinBudget              int64
-	MaxBudget              int64
+	MinBudget              *int64
+	MaxBudget              *int64
+	PreferredBuildingTypes string // e.g., "villa,apartment"
+	PreferredFeatures      string // e.g., JSON string: ["has_pool", "has_garden"]
+	MinRooms               *int64
+	MaxRooms               *int64
+	MinSurface             *float64
+	MaxSurface             *float64
+	Furnished              *bool // Optional if also in features
+	AcceptablePaymentType  string
+	HouseFinishing         string // drop one if duplicated
+	MaxYearBuilt           *int64
 }
 
 func ParseCreateContactRequest(r *http.Request, q *db.Queries, ctx context.Context) (CreateContactRequest, validations.ValidationErrors, error) {
@@ -48,13 +57,49 @@ func ParseCreateContactRequest(r *http.Request, q *db.Queries, ctx context.Conte
 	req.RentingFloorLookingFor = r.FormValue("renting_floor_looking_for")
 	req.IsMarried = r.FormValue("is_married") == "1" || r.FormValue("is_married") == "true"
 
-	// Handle budgets safely
-	if minBudget := r.FormValue("min_budget"); minBudget != "" {
-		req.MinBudget = utils.ParseInt64(minBudget)
+	if minBudget := r.FormValue("min_budget"); len(minBudget) > 0 {
+		minBudgetInt := utils.ParseInt64(minBudget)
+		req.MinBudget = &minBudgetInt
 	}
-	if maxBudget := r.FormValue("max_budget"); maxBudget != "" {
-		req.MaxBudget = utils.ParseInt64(maxBudget)
+	if maxBudget := r.FormValue("max_budget"); len(maxBudget) > 0 {
+		maxBudgetInt := utils.ParseInt64(maxBudget)
+		req.MaxBudget = &maxBudgetInt
 	}
 
+	req.PreferredBuildingTypes = r.FormValue("preferred_building_types")
+	req.PreferredFeatures = r.FormValue("preferred_features")
+
+	if minRooms := r.FormValue("min_rooms"); len(minRooms) > 0 {
+		minRoomsInt := utils.ParseInt64(minRooms)
+		req.MinRooms = &minRoomsInt
+	}
+
+	if maxRooms := r.FormValue("max_rooms"); len(maxRooms) > 0 {
+		maxRoomsInt := utils.ParseInt64(maxRooms)
+		req.MaxRooms = &maxRoomsInt
+	}
+
+	if minSurface := r.FormValue("min_surface"); len(minSurface) > 0 {
+		minSurfaceInt := utils.ParseFloat(minSurface)
+		req.MinSurface = &minSurfaceInt
+	}
+
+	if maxSurface := r.FormValue("max_surface"); len(maxSurface) > 0 {
+		maxSurfaceInt := utils.ParseFloat(maxSurface)
+		req.MaxSurface = &maxSurfaceInt
+	}
+
+	if furnished := r.FormValue("furnished"); len(furnished) > 0 {
+		isFurnished := r.FormValue("furnished") == "1" || r.FormValue("furnished") == "true"
+		req.Furnished = &isFurnished
+	}
+
+	req.AcceptablePaymentType = r.FormValue("acceptable_payment_type")
+	req.HouseFinishing = r.FormValue("house_finishing")
+
+	if maxYearBuilt := r.FormValue("max_year_built"); len(maxYearBuilt) > 0 {
+		maxYearBuiltInt := utils.ParseInt64(maxYearBuilt)
+		req.MaxYearBuilt = &maxYearBuiltInt
+	}
 	return req, nil, nil
 }

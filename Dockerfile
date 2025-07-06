@@ -10,10 +10,9 @@ RUN go mod download
 # Copy the full project
 COPY ./src .
 
-# Build each worker binary
-RUN go build -o bin/sms_worker_prepare ./cmd/sms_worker_prepare.go
-RUN go build -o bin/sms_worker_send ./cmd/sms_worker_send.go
-RUN go build -o bin/logispro
+RUN go build -o ./bin/building_embedding_generation ./cmd/building_embedding_generation.go
+RUN go build -o ./bin/contact_embedding_generation ./cmd/contact_embedding_generation.go
+RUN go build -o ./bin/logispro
 
 # Default command (can be overridden in docker-compose)
 CMD ["echo", "Use docker-compose to run the appropriate worker"]

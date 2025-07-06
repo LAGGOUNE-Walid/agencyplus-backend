@@ -1,0 +1,1 @@
+DROP table if exists contact_embeddings;

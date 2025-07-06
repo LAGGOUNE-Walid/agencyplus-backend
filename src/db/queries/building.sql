@@ -108,4 +108,10 @@ WHERE id = ? AND user_id = ? AND deleted_at is NULL;
 
 -- name: CreateBuildingVue :exec
 INSERT INTO building_vues(building_id, ip_address, user_agent)
-VALUES(?, ?, ?)
+VALUES(?, ?, ?);
+
+-- name: InsertEmbeddings :exec
+INSERT INTO building_embeddings(building_id, embedding, created_at) VALUES (?, ?, CURRENT_TIMESTAMP);
+
+-- name: GetBuildingEmbeddings :one
+SELECT * FROM building_embeddings where building_id = ?
