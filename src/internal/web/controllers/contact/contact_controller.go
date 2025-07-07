@@ -7,6 +7,7 @@ import (
 	"logispro/internal/constants"
 	"logispro/internal/services/contact_service"
 	"logispro/internal/shared/response_types"
+	"logispro/internal/utils"
 	"logispro/internal/web/requests"
 	"net/http"
 	"strconv"
@@ -66,6 +67,40 @@ func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Re
 		}
 	}
 	contacts, err := c.GetContactService.All(userId, r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			StatusCode: http.StatusInternalServerError,
+			Error:      err,
+		}
+	}
+
+	return response_types.ApiResponse{
+		StatusCode: http.StatusOK,
+		Content:    contacts,
+	}
+}
+
+func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
+	if !ok {
+		return response_types.ApiResponse{
+			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	contactsIdsString := r.URL.Query()["ids[]"]
+	if len(contactsIdsString) == 0 {
+		return response_types.ApiResponse{
+			StatusCode: http.StatusOK,
+			Content:    nil,
+		}
+	}
+	contactsIds := make([]int64, 0, len(contactsIdsString))
+	for _, idStr := range contactsIdsString {
+		idInt := utils.ParseInt64(idStr)
+		contactsIds = append(contactsIds, idInt)
+	}
+	contacts, err := c.GetContactService.FinAll(contactsIds, userId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,

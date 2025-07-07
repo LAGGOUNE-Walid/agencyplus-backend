@@ -16,3 +16,7 @@ func (s *GetContactService) All(userId int64, ctx context.Context) ([]db.GetAllC
 func (s *GetContactService) Get(id int64, userId int64, ctx context.Context) (db.Contact, error) {
 	return s.Queries.GetContact(ctx, db.GetContactParams{UserID: userId, ID: id})
 }
+
+func (s *GetContactService) FinAll(ids []int64, userId int64, ctx context.Context) ([]db.Contact, error) {
+	return s.Queries.GetContactsList(ctx, db.GetContactsListParams{ContactIds: ids, UserID: userId})
+}

@@ -41,6 +41,12 @@ SELECT
 FROM contacts
 WHERE id = ? AND user_id = ?;
 
+-- name: GetContactsList :many
+SELECT
+  *
+FROM contacts
+WHERE id IN (sqlc.slice('contact_ids')) AND user_id = ?;
+
 -- name: GetAllContacts :many
 SELECT
   id,

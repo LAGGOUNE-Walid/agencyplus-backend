@@ -337,6 +337,80 @@ func (q *Queries) GetContactsById(ctx context.Context, arg GetContactsByIdParams
 	return items, nil
 }
 
+const getContactsList = `-- name: GetContactsList :many
+SELECT
+  id, user_id, fullname, phone, email, wilaya, daira, client_type, searching_for, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, min_budget, max_budget, created_at, updated_at, deleted_at, preferred_building_types, preferred_features, min_rooms, max_rooms, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built
+FROM contacts
+WHERE id IN (/*SLICE:contact_ids*/?) AND user_id = ?
+`
+
+type GetContactsListParams struct {
+	ContactIds []int64 `json:"contact_ids"`
+	UserID     int64   `json:"user_id"`
+}
+
+func (q *Queries) GetContactsList(ctx context.Context, arg GetContactsListParams) ([]Contact, error) {
+	query := getContactsList
+	var queryParams []interface{}
+	if len(arg.ContactIds) > 0 {
+		for _, v := range arg.ContactIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:contact_ids*/?", strings.Repeat(",?", len(arg.ContactIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:contact_ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.UserID)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Contact{}
+	for rows.Next() {
+		var i Contact
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Fullname,
+			&i.Phone,
+			&i.Email,
+			&i.Wilaya,
+			&i.Daira,
+			&i.ClientType,
+			&i.SearchingFor,
+			&i.PreferredLocationType,
+			&i.HouseFinishing,
+			&i.RentingFloorLookingFor,
+			&i.IsMarried,
+			&i.MinBudget,
+			&i.MaxBudget,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.PreferredBuildingTypes,
+			&i.PreferredFeatures,
+			&i.MinRooms,
+			&i.MaxRooms,
+			&i.MinSurface,
+			&i.MaxSurface,
+			&i.Furnished,
+			&i.AcceptablePaymentType,
+			&i.MaxYearBuilt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getContactsWithEmbeddings = `-- name: GetContactsWithEmbeddings :many
 SELECT
   contacts.id,
