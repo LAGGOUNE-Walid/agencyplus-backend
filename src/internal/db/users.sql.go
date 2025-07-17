@@ -90,7 +90,7 @@ const getUserAgents = `-- name: GetUserAgents :many
 SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at from users where root_id = ?
 `
 
-func (q *Queries) GetUserAgents(ctx context.Context, rootID int64) ([]User, error) {
+func (q *Queries) GetUserAgents(ctx context.Context, rootID interface{}) ([]User, error) {
 	rows, err := q.db.QueryContext(ctx, getUserAgents, rootID)
 	if err != nil {
 		return nil, err

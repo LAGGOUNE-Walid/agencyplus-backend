@@ -14,9 +14,10 @@ import (
 )
 
 type BuildingController struct {
-	CreateBuildingService *building_service.CreateBuildingService
-	GetBuildingService    *building_service.GetBuildingService
-	UpdateBuildingService *building_service.UpdateBuildingService
+	CreateBuildingService         *building_service.CreateBuildingService
+	GetBuildingService            *building_service.GetBuildingService
+	UpdateBuildingService         *building_service.UpdateBuildingService
+	GetBuildingsStatisticsService *building_service.GetBuildingsStatisticsService
 }
 
 func (c *BuildingController) CreateBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
@@ -368,6 +369,118 @@ func (c *BuildingController) AddVueHandler(w http.ResponseWriter, r *http.Reques
 	}
 	return response_types.ApiResponse{
 		Content:    nil,
+		StatusCode: http.StatusCreated,
+	}
+}
+
+func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+	ctx := r.Context()
+	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
+	if !ok {
+		return response_types.ApiResponse{
+			Error:      fmt.Errorf("failed to format user id %v to int64", ctx.Value(constants.UserIDContextKey)),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	statistics, err := c.GetBuildingsStatisticsService.Get(userId, ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response_types.ApiResponse{
+				Content:    nil,
+				StatusCode: http.StatusCreated,
+			}
+		}
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	return response_types.ApiResponse{
+		Content:    statistics,
+		StatusCode: http.StatusCreated,
+	}
+}
+
+func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+	ctx := r.Context()
+	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
+	if !ok {
+		return response_types.ApiResponse{
+			Error:      fmt.Errorf("failed to format user id %v to int64", ctx.Value(constants.UserIDContextKey)),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	gain, err := c.GetBuildingsStatisticsService.GetBuildingsTotalChangeRate(userId, ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response_types.ApiResponse{
+				Content:    nil,
+				StatusCode: http.StatusCreated,
+			}
+		}
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	return response_types.ApiResponse{
+		Content:    gain,
+		StatusCode: http.StatusCreated,
+	}
+}
+
+func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+	ctx := r.Context()
+	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
+	if !ok {
+		return response_types.ApiResponse{
+			Error:      fmt.Errorf("failed to format user id %v to int64", ctx.Value(constants.UserIDContextKey)),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	dairas, err := c.GetBuildingsStatisticsService.GetBuildingsDairaDistribution(userId, ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response_types.ApiResponse{
+				Content:    nil,
+				StatusCode: http.StatusCreated,
+			}
+		}
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	return response_types.ApiResponse{
+		Content:    dairas,
+		StatusCode: http.StatusCreated,
+	}
+}
+
+func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+	ctx := r.Context()
+	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
+	if !ok {
+		return response_types.ApiResponse{
+			Error:      fmt.Errorf("failed to format user id %v to int64", ctx.Value(constants.UserIDContextKey)),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	location, err := c.GetBuildingsStatisticsService.GetBuildingsLocations(userId, ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return response_types.ApiResponse{
+				Content:    nil,
+				StatusCode: http.StatusCreated,
+			}
+		}
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	return response_types.ApiResponse{
+		Content:    location,
 		StatusCode: http.StatusCreated,
 	}
 }

@@ -35,6 +35,9 @@ SELECT COUNT(*) FROM contacts WHERE phone = ?;
 -- name: CountContactsByEmail :one
 SELECT COUNT(*) FROM contacts WHERE email = ?;
 
+-- name: CountUserContacts :one
+SELECT COUNT(*) FROM contacts WHERE user_id = ?;
+
 -- name: GetContact :one
 SELECT
   *

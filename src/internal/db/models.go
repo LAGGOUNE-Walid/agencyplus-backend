@@ -197,7 +197,7 @@ type User struct {
 	ID            int64          `json:"id"`
 	Fullname      string         `json:"fullname"`
 	Role          int64          `json:"role"`
-	RootID        int64          `json:"root_id"`
+	RootID        interface{}    `json:"root_id"`
 	Email         string         `json:"email"`
 	Phone         string         `json:"phone"`
 	AgencyName    string         `json:"agency_name"`

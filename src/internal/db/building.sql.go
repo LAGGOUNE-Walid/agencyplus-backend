@@ -11,6 +11,33 @@ import (
 	"strings"
 )
 
+const countUserBuildings = `-- name: CountUserBuildings :one
+SELECT count(id) FROM buildings WHERE user_id = ? and deleted_at IS NULL
+`
+
+func (q *Queries) CountUserBuildings(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUserBuildings, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUserBuildingsByStatus = `-- name: CountUserBuildingsByStatus :one
+SELECT count(id) FROM buildings WHERE user_id = ? and status = ? and deleted_at IS NULL
+`
+
+type CountUserBuildingsByStatusParams struct {
+	UserID int64          `json:"user_id"`
+	Status sql.NullString `json:"status"`
+}
+
+func (q *Queries) CountUserBuildingsByStatus(ctx context.Context, arg CountUserBuildingsByStatusParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUserBuildingsByStatus, arg.UserID, arg.Status)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBuilding = `-- name: CreateBuilding :execresult
 INSERT INTO buildings (
   user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency,
@@ -344,6 +371,88 @@ func (q *Queries) GetBuildingEmbeddings(ctx context.Context, buildingID int64) (
 		&i.Embedding,
 		&i.CreatedAt,
 	)
+	return i, err
+}
+
+const getBuildingsDairas = `-- name: GetBuildingsDairas :many
+SELECT count(id), daira from buildings where user_id = ? group by daira
+`
+
+type GetBuildingsDairasRow struct {
+	Count int64          `json:"count"`
+	Daira sql.NullString `json:"daira"`
+}
+
+func (q *Queries) GetBuildingsDairas(ctx context.Context, userID int64) ([]GetBuildingsDairasRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBuildingsDairas, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetBuildingsDairasRow{}
+	for rows.Next() {
+		var i GetBuildingsDairasRow
+		if err := rows.Scan(&i.Count, &i.Daira); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBuildingsMap = `-- name: GetBuildingsMap :many
+SELECT id, title, location from buildings where user_id = ?
+`
+
+type GetBuildingsMapRow struct {
+	ID       int64          `json:"id"`
+	Title    sql.NullString `json:"title"`
+	Location sql.NullString `json:"location"`
+}
+
+func (q *Queries) GetBuildingsMap(ctx context.Context, userID int64) ([]GetBuildingsMapRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBuildingsMap, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetBuildingsMapRow{}
+	for rows.Next() {
+		var i GetBuildingsMapRow
+		if err := rows.Scan(&i.ID, &i.Title, &i.Location); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBuildingsTotalChangeRate = `-- name: GetBuildingsTotalChangeRate :one
+SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE buildings.user_id = ?
+`
+
+type GetBuildingsTotalChangeRateRow struct {
+	CurrentYearTotal sql.NullFloat64 `json:"current_year_total"`
+	LastYearTotal    sql.NullFloat64 `json:"last_year_total"`
+	PercentageChange interface{}     `json:"percentage_change"`
+}
+
+func (q *Queries) GetBuildingsTotalChangeRate(ctx context.Context, userID int64) (GetBuildingsTotalChangeRateRow, error) {
+	row := q.db.QueryRowContext(ctx, getBuildingsTotalChangeRate, userID)
+	var i GetBuildingsTotalChangeRateRow
+	err := row.Scan(&i.CurrentYearTotal, &i.LastYearTotal, &i.PercentageChange)
 	return i, err
 }
 

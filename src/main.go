@@ -25,6 +25,7 @@ import (
 	"logispro/internal/web/controllers/task"
 	"logispro/internal/web/controllers/user"
 	"os"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -61,6 +62,9 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries, rabbitMq
 				RabbitMqConn: rabbitMqConn,
 			},
 			GetBuildingService: &building_service.GetBuildingService{
+				Queries: queries,
+			},
+			GetBuildingsStatisticsService: &building_service.GetBuildingsStatisticsService{
 				Queries: queries,
 			},
 			UpdateBuildingService: &building_service.UpdateBuildingService{
@@ -102,6 +106,7 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries, rabbitMq
 }
 
 func main() {
+	time.Sleep(10 * time.Second)
 	config.LoadEnv()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	sqliteDb, err := sqlite.New("file", config.SqlitePath)

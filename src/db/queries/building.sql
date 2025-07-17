@@ -114,4 +114,19 @@ VALUES(?, ?, ?);
 INSERT INTO building_embeddings(building_id, embedding, created_at) VALUES (?, ?, CURRENT_TIMESTAMP);
 
 -- name: GetBuildingEmbeddings :one
-SELECT * FROM building_embeddings where building_id = ?
+SELECT * FROM building_embeddings where building_id = ?;
+
+-- name: CountUserBuildings :one
+SELECT count(id) FROM buildings WHERE user_id = ? and deleted_at IS NULL;
+
+-- name: CountUserBuildingsByStatus :one
+SELECT count(id) FROM buildings WHERE user_id = ? and status = ? and deleted_at IS NULL;
+
+-- name: GetBuildingsTotalChangeRate :one
+SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE buildings.user_id = ?;
+
+-- name: GetBuildingsDairas :many
+SELECT count(id), daira from buildings where user_id = ? group by daira;
+
+-- name: GetBuildingsMap :many
+SELECT id, title, location from buildings where user_id = ?;

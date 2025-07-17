@@ -17,6 +17,7 @@ type AuthService struct {
 func (s *AuthService) Authenticate(ctx context.Context, req requests.AuthRequest) (db.User, string, error) {
 	user, err := s.Queries.GetUserByEmail(ctx, req.Email)
 	if err != nil {
+		return db.User{}, "", err
 		return db.User{}, "", fmt.Errorf("user not found")
 	}
 

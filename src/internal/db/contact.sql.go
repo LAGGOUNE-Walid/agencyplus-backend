@@ -33,6 +33,17 @@ func (q *Queries) CountContactsByPhone(ctx context.Context, phone sql.NullString
 	return count, err
 }
 
+const countUserContacts = `-- name: CountUserContacts :one
+SELECT COUNT(*) FROM contacts WHERE user_id = ?
+`
+
+func (q *Queries) CountUserContacts(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUserContacts, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createContact = `-- name: CreateContact :execresult
 INSERT INTO contacts (
   user_id,

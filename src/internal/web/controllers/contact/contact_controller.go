@@ -79,6 +79,27 @@ func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Re
 		Content:    contacts,
 	}
 }
+func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
+	if !ok {
+		return response_types.ApiResponse{
+			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	count, err := c.GetContactService.Count(userId, r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			StatusCode: http.StatusInternalServerError,
+			Error:      err,
+		}
+	}
+
+	return response_types.ApiResponse{
+		StatusCode: http.StatusOK,
+		Content:    count,
+	}
+}
 
 func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
