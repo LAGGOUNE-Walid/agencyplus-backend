@@ -15,10 +15,10 @@ func ValidateCreateContactRequest(r *http.Request, q *db.Queries, ctx context.Co
 	email := r.FormValue("email")
 	phone := r.FormValue("phone")
 
-	ValidateNonEmpty(fullname, "fullname", "required", errs)
+	ValidateNonEmpty(fullname, "fullname", "requis", errs)
 	ValidateMinLength(fullname, "fullname", 3, errs)
 
-	ValidateNonEmpty(email, "email", "required", errs)
+	ValidateNonEmpty(email, "email", "requis", errs)
 	if email != "" && !strings.Contains(email, "@") {
 		errs.Add("email", "valid")
 	} else if email != "" {
@@ -31,7 +31,7 @@ func ValidateCreateContactRequest(r *http.Request, q *db.Queries, ctx context.Co
 		}
 	}
 
-	ValidateNonEmpty(phone, "phone", "required", errs)
+	ValidateNonEmpty(phone, "phone", "requis", errs)
 	if phone != "" {
 		samePhoneContacts, err := q.CountContactsByPhone(ctx, sql.NullString{String: phone, Valid: true})
 		if err != nil {

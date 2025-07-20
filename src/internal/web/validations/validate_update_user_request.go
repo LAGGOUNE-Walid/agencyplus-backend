@@ -21,14 +21,14 @@ func ValidateUpdateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 	daira := r.FormValue("daira")
 	password := r.FormValue("password")
 
-	ValidateNonEmpty(fullname, "fullname", "required", errs)
+	ValidateNonEmpty(fullname, "fullname", "requis", errs)
 	if fullname != "" {
 		ValidateMinLength(fullname, "fullname", 3, errs)
 	}
 
-	ValidateNonEmpty(email, "email", "required", errs)
+	ValidateNonEmpty(email, "email", "requis", errs)
 	if email != "" && !strings.Contains(email, "@") {
-		errs.Add("email", "valid")
+		errs.Add("email", "doit être une adresse e-mail valide")
 	}
 	if email != "" {
 		existingUser, err := q.GetUserByEmail(ctx, email)
@@ -37,15 +37,15 @@ func ValidateUpdateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 		}
 	}
 
-	ValidateNonEmpty(phone, "phone", "required", errs)
+	ValidateNonEmpty(phone, "phone", "requis", errs)
 	if phone != "" {
 		ValidateMinLength(phone, "phone", 6, errs)
 	}
 
-	ValidateNonEmpty(agencyName, "agency_name", "required", errs)
-	ValidateNonEmpty(agencyAddress, "agency_address", "required", errs)
-	ValidateNonEmpty(wilaya, "wilaya", "required", errs)
-	ValidateNonEmpty(daira, "daira", "required", errs)
+	ValidateNonEmpty(agencyName, "agency_name", "requis", errs)
+	ValidateNonEmpty(agencyAddress, "agency_address", "requis", errs)
+	ValidateNonEmpty(wilaya, "wilaya", "requis", errs)
+	ValidateNonEmpty(daira, "daira", "requis", errs)
 
 	if password != "" {
 		ValidateMinLength(password, "password", 3, errs)
@@ -55,7 +55,7 @@ func ValidateUpdateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 	file, header, err := r.FormFile("agency_logo")
 	if err != nil {
 		if err != http.ErrMissingFile {
-			errs.Add("agency_logo", "failed to read uploaded file")
+			errs.Add("agency_logo", "échec de lecture du fichier")
 		}
 	} else {
 		defer file.Close()

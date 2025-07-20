@@ -17,11 +17,11 @@ func ValidateCreateBuildingDocumentsRequest(r *http.Request) (ValidationErrors, 
 	// Validate documents[]
 	if docs, ok := r.MultipartForm.File["documents"]; ok {
 		if len(docs) > constants.MaxBuildingDocuments {
-			errs.Add("documents[]", "max_50_files")
+			errs.Add("documents[]", "max 50 fichiers")
 		} else {
 			for _, fileHeader := range docs {
 				if fileHeader.Size > constants.MaxBuildingDocumentSize {
-					errs.Add("documents[]", "max_size_5MB")
+					errs.Add("documents[]", "taille max 5MB")
 					continue
 				}
 				validDocHeaders = append(validDocHeaders, fileHeader)
@@ -30,7 +30,7 @@ func ValidateCreateBuildingDocumentsRequest(r *http.Request) (ValidationErrors, 
 					defer wg.Done()
 					mime, err := detectMimeType(fh)
 					if err != nil || !isValidPDFMime(mime) {
-						fileErrs <- fieldError{Field: "documents[]", Message: "invalid_pdf"}
+						fileErrs <- fieldError{Field: "documents[]", Message: "pdf invalide"}
 					}
 				}(fileHeader)
 			}

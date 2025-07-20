@@ -27,43 +27,47 @@ func (s *CreateContactService) Create(ctx context.Context, req requests.CreateCo
 		Fullname: req.FullName,
 		Phone: sql.NullString{
 			String: req.Phone,
-			Valid:  req.Phone != "",
+			Valid:  len(req.Phone) != 0,
 		},
 		Email: sql.NullString{
 			String: req.Email,
-			Valid:  req.Email != "",
+			Valid:  len(req.Email) != 0,
 		},
 		Wilaya: sql.NullString{
 			String: req.Wilaya,
-			Valid:  req.Wilaya != "",
+			Valid:  len(req.Wilaya) != 0,
 		},
 		Daira: sql.NullString{
 			String: req.Daira,
-			Valid:  req.Daira != "",
+			Valid:  len(req.Daira) != 0,
 		},
 		ClientType: sql.NullString{
 			String: req.ClientType,
-			Valid:  req.ClientType != "",
-		},
-		SearchingFor: sql.NullString{
-			String: req.SearchingFor,
-			Valid:  req.SearchingFor != "",
+			Valid:  len(req.ClientType) != 0,
 		},
 		PreferredLocationType: sql.NullString{
 			String: req.PreferredLocationType,
-			Valid:  req.PreferredLocationType != "",
+			Valid:  len(req.PreferredLocationType) != 0,
 		},
 		HouseFinishing: sql.NullString{
 			String: req.HouseFinishing,
-			Valid:  req.HouseFinishing != "",
+			Valid:  len(req.HouseFinishing) != 0,
 		},
 		RentingFloorLookingFor: sql.NullString{
 			String: req.RentingFloorLookingFor,
-			Valid:  req.RentingFloorLookingFor != "",
+			Valid:  len(req.RentingFloorLookingFor) != 0,
 		},
 		IsMarried: sql.NullBool{
 			Bool:  req.IsMarried,
 			Valid: true, // always valid since it's a non-pointer bool
+		},
+		PreferredBuildingTypes: sql.NullString{
+			String: req.PreferredBuildingTypes,
+			Valid:  len(req.PreferredBuildingTypes) != 0,
+		},
+		PreferredFeatures: sql.NullString{
+			String: req.PreferredFeatures,
+			Valid:  len(req.PreferredFeatures) != 0,
 		},
 		MinBudget: sql.NullInt64{
 			Int64: func() int64 {
@@ -83,14 +87,7 @@ func (s *CreateContactService) Create(ctx context.Context, req requests.CreateCo
 			}(),
 			Valid: req.MaxBudget != nil,
 		},
-		PreferredBuildingTypes: sql.NullString{
-			String: req.PreferredBuildingTypes,
-			Valid:  req.PreferredBuildingTypes != "",
-		},
-		PreferredFeatures: sql.NullString{
-			String: req.PreferredFeatures,
-			Valid:  req.PreferredFeatures != "",
-		},
+
 		MinRooms: sql.NullInt64{
 			Int64: func() int64 {
 				if req.MinRooms != nil {
@@ -138,7 +135,7 @@ func (s *CreateContactService) Create(ctx context.Context, req requests.CreateCo
 		},
 		AcceptablePaymentType: sql.NullString{
 			String: req.AcceptablePaymentType,
-			Valid:  req.AcceptablePaymentType != "",
+			Valid:  len(req.AcceptablePaymentType) != 0,
 		},
 		MaxYearBuilt: sql.NullInt64{
 			Int64: func() int64 {
@@ -149,6 +146,8 @@ func (s *CreateContactService) Create(ctx context.Context, req requests.CreateCo
 			}(),
 			Valid: req.MaxYearBuilt != nil,
 		},
+		PurchaseUrgency: sql.NullString{String: req.PurchaseUrgency, Valid: len(req.PurchaseUrgency) != 0},
+		Comments:        sql.NullString{String: req.Comments, Valid: len(req.Comments) != 0},
 	}
 
 	contactID, err := s.Queries.CreateContact(ctx, arg)

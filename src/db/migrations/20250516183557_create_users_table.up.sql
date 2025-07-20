@@ -1,9 +1,8 @@
-
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fullname TEXT NOT NULL,
     role INT NOT NULL,
-    root_id INT NOT,
+    root_id INT DEFAULT NULL,
     email TEXT NOT NULL UNIQUE,
     phone TEXT NOT NULL,
     agency_name TEXT NOT NULL,

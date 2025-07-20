@@ -118,25 +118,26 @@ type Contact struct {
 	Wilaya                 sql.NullString  `json:"wilaya"`
 	Daira                  sql.NullString  `json:"daira"`
 	ClientType             sql.NullString  `json:"client_type"`
-	SearchingFor           sql.NullString  `json:"searching_for"`
 	PreferredLocationType  sql.NullString  `json:"preferred_location_type"`
 	HouseFinishing         sql.NullString  `json:"house_finishing"`
 	RentingFloorLookingFor sql.NullString  `json:"renting_floor_looking_for"`
 	IsMarried              sql.NullBool    `json:"is_married"`
-	MinBudget              sql.NullInt64   `json:"min_budget"`
-	MaxBudget              sql.NullInt64   `json:"max_budget"`
-	CreatedAt              sql.NullTime    `json:"created_at"`
-	UpdatedAt              sql.NullTime    `json:"updated_at"`
-	DeletedAt              sql.NullTime    `json:"deleted_at"`
 	PreferredBuildingTypes sql.NullString  `json:"preferred_building_types"`
 	PreferredFeatures      sql.NullString  `json:"preferred_features"`
 	MinRooms               sql.NullInt64   `json:"min_rooms"`
 	MaxRooms               sql.NullInt64   `json:"max_rooms"`
+	MinBudget              sql.NullInt64   `json:"min_budget"`
+	MaxBudget              sql.NullInt64   `json:"max_budget"`
 	MinSurface             sql.NullFloat64 `json:"min_surface"`
 	MaxSurface             sql.NullFloat64 `json:"max_surface"`
 	Furnished              sql.NullBool    `json:"furnished"`
 	AcceptablePaymentType  sql.NullString  `json:"acceptable_payment_type"`
 	MaxYearBuilt           sql.NullInt64   `json:"max_year_built"`
+	PurchaseUrgency        sql.NullString  `json:"purchase_urgency"`
+	Comments               sql.NullString  `json:"comments"`
+	CreatedAt              sql.NullTime    `json:"created_at"`
+	UpdatedAt              sql.NullTime    `json:"updated_at"`
+	DeletedAt              sql.NullTime    `json:"deleted_at"`
 }
 
 type ContactEmbedding struct {
@@ -197,7 +198,7 @@ type User struct {
 	ID            int64          `json:"id"`
 	Fullname      string         `json:"fullname"`
 	Role          int64          `json:"role"`
-	RootID        interface{}    `json:"root_id"`
+	RootID        sql.NullInt64  `json:"root_id"`
 	Email         string         `json:"email"`
 	Phone         string         `json:"phone"`
 	AgencyName    string         `json:"agency_name"`

@@ -53,7 +53,6 @@ INSERT INTO contacts (
   wilaya,
   daira,
   client_type,
-  searching_for,
   preferred_location_type,
   house_finishing,
   renting_floor_looking_for,
@@ -69,10 +68,10 @@ INSERT INTO contacts (
   furnished,
   acceptable_payment_type,
   max_year_built,
-  created_at,
-  updated_at
+  purchase_urgency,
+  comments
 ) VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 `
 
@@ -84,7 +83,6 @@ type CreateContactParams struct {
 	Wilaya                 sql.NullString  `json:"wilaya"`
 	Daira                  sql.NullString  `json:"daira"`
 	ClientType             sql.NullString  `json:"client_type"`
-	SearchingFor           sql.NullString  `json:"searching_for"`
 	PreferredLocationType  sql.NullString  `json:"preferred_location_type"`
 	HouseFinishing         sql.NullString  `json:"house_finishing"`
 	RentingFloorLookingFor sql.NullString  `json:"renting_floor_looking_for"`
@@ -100,6 +98,8 @@ type CreateContactParams struct {
 	Furnished              sql.NullBool    `json:"furnished"`
 	AcceptablePaymentType  sql.NullString  `json:"acceptable_payment_type"`
 	MaxYearBuilt           sql.NullInt64   `json:"max_year_built"`
+	PurchaseUrgency        sql.NullString  `json:"purchase_urgency"`
+	Comments               sql.NullString  `json:"comments"`
 }
 
 func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (sql.Result, error) {
@@ -111,7 +111,6 @@ func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (s
 		arg.Wilaya,
 		arg.Daira,
 		arg.ClientType,
-		arg.SearchingFor,
 		arg.PreferredLocationType,
 		arg.HouseFinishing,
 		arg.RentingFloorLookingFor,
@@ -127,6 +126,8 @@ func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (s
 		arg.Furnished,
 		arg.AcceptablePaymentType,
 		arg.MaxYearBuilt,
+		arg.PurchaseUrgency,
+		arg.Comments,
 	)
 }
 
@@ -147,57 +148,21 @@ func (q *Queries) DeleteContact(ctx context.Context, arg DeleteContactParams) er
 
 const getAllContacts = `-- name: GetAllContacts :many
 SELECT
-  id,
-  user_id,
-  fullname,
-  phone,
-  email,
-  wilaya,
-  daira,
-  client_type,
-  searching_for,
-  preferred_location_type,
-  house_finishing,
-  renting_floor_looking_for,
-  is_married,
-  min_budget,
-  max_budget,
-  created_at,
-  updated_at
+  id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
 WHERE user_id = ?
 ORDER BY id DESC
 `
 
-type GetAllContactsRow struct {
-	ID                     int64          `json:"id"`
-	UserID                 int64          `json:"user_id"`
-	Fullname               string         `json:"fullname"`
-	Phone                  sql.NullString `json:"phone"`
-	Email                  sql.NullString `json:"email"`
-	Wilaya                 sql.NullString `json:"wilaya"`
-	Daira                  sql.NullString `json:"daira"`
-	ClientType             sql.NullString `json:"client_type"`
-	SearchingFor           sql.NullString `json:"searching_for"`
-	PreferredLocationType  sql.NullString `json:"preferred_location_type"`
-	HouseFinishing         sql.NullString `json:"house_finishing"`
-	RentingFloorLookingFor sql.NullString `json:"renting_floor_looking_for"`
-	IsMarried              sql.NullBool   `json:"is_married"`
-	MinBudget              sql.NullInt64  `json:"min_budget"`
-	MaxBudget              sql.NullInt64  `json:"max_budget"`
-	CreatedAt              sql.NullTime   `json:"created_at"`
-	UpdatedAt              sql.NullTime   `json:"updated_at"`
-}
-
-func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]GetAllContactsRow, error) {
+func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]Contact, error) {
 	rows, err := q.db.QueryContext(ctx, getAllContacts, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetAllContactsRow{}
+	items := []Contact{}
 	for rows.Next() {
-		var i GetAllContactsRow
+		var i Contact
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -207,15 +172,26 @@ func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]GetAllCon
 			&i.Wilaya,
 			&i.Daira,
 			&i.ClientType,
-			&i.SearchingFor,
 			&i.PreferredLocationType,
 			&i.HouseFinishing,
 			&i.RentingFloorLookingFor,
 			&i.IsMarried,
+			&i.PreferredBuildingTypes,
+			&i.PreferredFeatures,
+			&i.MinRooms,
+			&i.MaxRooms,
 			&i.MinBudget,
 			&i.MaxBudget,
+			&i.MinSurface,
+			&i.MaxSurface,
+			&i.Furnished,
+			&i.AcceptablePaymentType,
+			&i.MaxYearBuilt,
+			&i.PurchaseUrgency,
+			&i.Comments,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -232,7 +208,7 @@ func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]GetAllCon
 
 const getContact = `-- name: GetContact :one
 SELECT
-  id, user_id, fullname, phone, email, wilaya, daira, client_type, searching_for, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, min_budget, max_budget, created_at, updated_at, deleted_at, preferred_building_types, preferred_features, min_rooms, max_rooms, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built
+  id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
 WHERE id = ? AND user_id = ?
 `
@@ -254,25 +230,26 @@ func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (Contact
 		&i.Wilaya,
 		&i.Daira,
 		&i.ClientType,
-		&i.SearchingFor,
 		&i.PreferredLocationType,
 		&i.HouseFinishing,
 		&i.RentingFloorLookingFor,
 		&i.IsMarried,
-		&i.MinBudget,
-		&i.MaxBudget,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
 		&i.PreferredBuildingTypes,
 		&i.PreferredFeatures,
 		&i.MinRooms,
 		&i.MaxRooms,
+		&i.MinBudget,
+		&i.MaxBudget,
 		&i.MinSurface,
 		&i.MaxSurface,
 		&i.Furnished,
 		&i.AcceptablePaymentType,
 		&i.MaxYearBuilt,
+		&i.PurchaseUrgency,
+		&i.Comments,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -350,7 +327,7 @@ func (q *Queries) GetContactsById(ctx context.Context, arg GetContactsByIdParams
 
 const getContactsList = `-- name: GetContactsList :many
 SELECT
-  id, user_id, fullname, phone, email, wilaya, daira, client_type, searching_for, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, min_budget, max_budget, created_at, updated_at, deleted_at, preferred_building_types, preferred_features, min_rooms, max_rooms, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built
+  id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
 WHERE id IN (/*SLICE:contact_ids*/?) AND user_id = ?
 `
@@ -389,25 +366,26 @@ func (q *Queries) GetContactsList(ctx context.Context, arg GetContactsListParams
 			&i.Wilaya,
 			&i.Daira,
 			&i.ClientType,
-			&i.SearchingFor,
 			&i.PreferredLocationType,
 			&i.HouseFinishing,
 			&i.RentingFloorLookingFor,
 			&i.IsMarried,
-			&i.MinBudget,
-			&i.MaxBudget,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.DeletedAt,
 			&i.PreferredBuildingTypes,
 			&i.PreferredFeatures,
 			&i.MinRooms,
 			&i.MaxRooms,
+			&i.MinBudget,
+			&i.MaxBudget,
 			&i.MinSurface,
 			&i.MaxSurface,
 			&i.Furnished,
 			&i.AcceptablePaymentType,
 			&i.MaxYearBuilt,
+			&i.PurchaseUrgency,
+			&i.Comments,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}

@@ -15,15 +15,15 @@ services:
     container_name: logispro-app
     ports:
       - "8085:8085"
-    command: ./bin/logispro
+    command: /bin/logispro
     networks:
       - logispro-net
     depends_on:
       - rabbitmq
       - redis
       - ollama
-    # volumes:
-      # - ./src:/app
+    volumes:
+      - ./src:/app
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -47,20 +47,24 @@ services:
       - ./redis_data:/data
     networks:
       - logispro-net
-  # building-embedding:
-  #    build: .
-  #    command: ./bin/building_embedding_generation
-  #    depends_on:
-  #      - rabbitmq
-  #    networks:
-  #      - logispro-net
-  # contact-embedding:
-  #    build: .
-  #    command: ./bin/contact_embedding_generation
-  #    depends_on:
-  #      - rabbitmq
-  #    networks:
-  #      - logispro-net
+  building-embedding:
+     build: .
+     volumes:
+      - ./src:/app
+     command: /bin/building_embedding_generation
+     depends_on:
+       - rabbitmq
+     networks:
+       - logispro-net
+  contact-embedding:
+     build: .
+     command: /bin/contact_embedding_generation
+     volumes:
+       - ./src:/app
+     depends_on:
+       - rabbitmq
+     networks:
+       - logispro-net
   
       
   #   depends_on:

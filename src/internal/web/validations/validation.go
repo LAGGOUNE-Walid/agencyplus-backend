@@ -70,25 +70,25 @@ func ValidateIp(value, field, errorMessage string, errs ValidationErrors) {
 
 func ValidateMinLength(value, field string, min int, errs ValidationErrors) {
 	if len(value) < min {
-		errs.Add(field, fmt.Sprintf("%s must be at least %d characters", field, min))
+		errs.Add(field, fmt.Sprintf("%s doit contenir au moins %d caractères", field, min))
 	}
 }
 
 func ValidateFileIsImage(file multipart.File, header *multipart.FileHeader, maxSize int64, field string, errs ValidationErrors) {
 	if header.Size > maxSize {
-		errs.Add(field, fmt.Sprintf("file size exceeds %d bytes", maxSize))
+		errs.Add(field, fmt.Sprintf("la taille du fichier dépasse %d octets", maxSize))
 		return
 	}
 
 	buffer := make([]byte, 512)
 	_, err := file.Read(buffer)
 	if err != nil {
-		errs.Add(field, "failed to read file content")
+		errs.Add(field, "échec de lecture du contenu du fichier")
 		return
 	}
 	contentType := http.DetectContentType(buffer)
 	if !strings.HasPrefix(contentType, "image/") {
-		errs.Add(field, "uploaded file is not a valid image")
+		errs.Add(field, "le fichier téléchargé n'est pas une image valide")
 	}
 	if seeker, ok := file.(interface {
 		Seek(int64, int) (int64, error)

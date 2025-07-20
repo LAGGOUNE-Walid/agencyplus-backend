@@ -112,7 +112,6 @@ func main() {
 		// Core matching fields
 		appendStr("Wilaya", u.Params.Wilaya)
 		appendStr("Daira", u.Params.Daira)
-		appendStr("Type", u.Params.SearchingFor)
 		appendStr("BuildingFinishing", u.Params.HouseFinishing)
 		appendStr("Payment", u.Params.AcceptablePaymentType)
 		appendBool("Furnished", u.Params.Furnished)
@@ -133,11 +132,11 @@ func main() {
 			}
 		}
 
-		// Optional: add preferred building types
 		if u.Params.PreferredBuildingTypes.Valid && u.Params.PreferredBuildingTypes.String != "" {
-			buildingTypes := strings.Split(u.Params.PreferredBuildingTypes.String, ",")
-			for _, bt := range buildingTypes {
-				parts = append(parts, fmt.Sprintf("BuildingType: %s", strings.TrimSpace(bt)))
+			var buildingTypes []string
+			_ = json.Unmarshal([]byte(u.Params.PreferredBuildingTypes.String), &buildingTypes)
+			for _, b := range buildingTypes {
+				parts = append(parts, fmt.Sprintf("BuildingType: %s", b))
 			}
 		}
 

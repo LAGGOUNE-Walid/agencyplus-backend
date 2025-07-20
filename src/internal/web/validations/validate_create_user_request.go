@@ -16,14 +16,14 @@ func ValidateCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	ValidateNonEmpty(fullname, "fullname", "required", errs)
+	ValidateNonEmpty(fullname, "fullname", "requis", errs)
 	if fullname != "" {
 		ValidateMinLength(fullname, "fullname", 3, errs)
 	}
 
-	ValidateNonEmpty(email, "email", "required", errs)
+	ValidateNonEmpty(email, "email", "requis", errs)
 	if email != "" && !strings.Contains(email, "@") {
-		errs.Add("email", "valid")
+		errs.Add("email", "doit être une adresse e-mail valide")
 	}
 	sameEmailUsers, err := q.CountUsersByEmail(ctx, email)
 	if err != nil {
@@ -33,7 +33,7 @@ func ValidateCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 		errs.Add("email", "unique")
 	}
 
-	ValidateNonEmpty(password, "password", "required", errs)
+	ValidateNonEmpty(password, "password", "requis", errs)
 	if password != "" {
 		ValidateMinLength(password, "password", 3, errs)
 	}
@@ -42,7 +42,7 @@ func ValidateCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Conte
 	file, header, err := r.FormFile("agency_logo")
 	if err != nil {
 		if err != http.ErrMissingFile {
-			errs.Add("agency_logo", "failed to read uploaded file")
+			errs.Add("agency_logo", "échec de lecture du fichier")
 		}
 	} else {
 		defer file.Close()

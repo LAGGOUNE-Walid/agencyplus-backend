@@ -20,11 +20,11 @@ func ValidateCreateBuildingImagesRequest(r *http.Request) (ValidationErrors, []*
 	if images, ok := r.MultipartForm.File["images"]; ok {
 
 		if len(images) > constants.MaxBuildingImages {
-			errs.Add("images[]", "max_50_files")
+			errs.Add("images[]", "max 50 fichiers")
 		} else {
 			for _, fileHeader := range images {
 				if fileHeader.Size > constants.MaxBuildingImageSize {
-					errs.Add("images[]", "max_size_5MB")
+					errs.Add("images[]", "taille max 5MB")
 					continue
 				}
 				validImageHeaders = append(validImageHeaders, fileHeader)
@@ -33,7 +33,7 @@ func ValidateCreateBuildingImagesRequest(r *http.Request) (ValidationErrors, []*
 					defer wg.Done()
 					mime, err := detectMimeType(fh)
 					if err != nil || !isValidImageMime(mime) {
-						fileErrs <- fieldError{Field: "images[]", Message: "invalid_image"}
+						fileErrs <- fieldError{Field: "images[]", Message: "image invalide"}
 					}
 				}(fileHeader)
 			}

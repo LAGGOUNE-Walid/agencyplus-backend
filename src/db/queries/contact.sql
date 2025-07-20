@@ -7,7 +7,6 @@ INSERT INTO contacts (
   wilaya,
   daira,
   client_type,
-  searching_for,
   preferred_location_type,
   house_finishing,
   renting_floor_looking_for,
@@ -23,11 +22,13 @@ INSERT INTO contacts (
   furnished,
   acceptable_payment_type,
   max_year_built,
-  created_at,
-  updated_at
+  purchase_urgency,
+  comments
 ) VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );
+
+
 
 -- name: CountContactsByPhone :one
 SELECT COUNT(*) FROM contacts WHERE phone = ?;
@@ -52,23 +53,7 @@ WHERE id IN (sqlc.slice('contact_ids')) AND user_id = ?;
 
 -- name: GetAllContacts :many
 SELECT
-  id,
-  user_id,
-  fullname,
-  phone,
-  email,
-  wilaya,
-  daira,
-  client_type,
-  searching_for,
-  preferred_location_type,
-  house_finishing,
-  renting_floor_looking_for,
-  is_married,
-  min_budget,
-  max_budget,
-  created_at,
-  updated_at
+  *
 FROM contacts
 WHERE user_id = ?
 ORDER BY id DESC;

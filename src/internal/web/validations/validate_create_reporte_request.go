@@ -8,7 +8,7 @@ func ValidateCreateReportRequest(r *http.Request) ValidationErrors {
 	errs := make(ValidationErrors)
 	title := r.FormValue("title")
 	content := r.FormValue("content")
-	ValidateNonEmpty(title, "title", "required", errs)
-	ValidateNonEmpty(content, "content", "required", errs)
+	ValidateNonEmpty(title, "title", "requis", errs)
+	ValidateNonEmpty(content, "content", "requis", errs)
 	return errs
 }

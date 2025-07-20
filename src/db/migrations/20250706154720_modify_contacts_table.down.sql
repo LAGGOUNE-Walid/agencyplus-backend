@@ -1,9 +1,0 @@
-ALTER TABLE contacts DROP COLUMN preferred_building_types;
-ALTER TABLE contacts DROP COLUMN preferred_features;
-ALTER TABLE contacts DROP COLUMN min_rooms;
-ALTER TABLE contacts DROP COLUMN max_rooms;
-ALTER TABLE contacts DROP COLUMN min_surface;
-ALTER TABLE contacts DROP COLUMN max_surface;
-ALTER TABLE contacts DROP COLUMN furnished;
-ALTER TABLE contacts DROP COLUMN acceptable_payment_type;
-ALTER TABLE contacts DROP COLUMN max_year_built;

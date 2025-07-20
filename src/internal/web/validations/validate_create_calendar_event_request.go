@@ -7,10 +7,10 @@ func ValidateCreateCalendarEventRequest(r *http.Request) ValidationErrors {
 	title := r.FormValue("title")
 	content := r.FormValue("content")
 	for_date := r.FormValue("for_date")
-	ValidateNonEmpty(title, "title", "required", errs)
-	ValidateNonEmpty(content, "content", "required", errs)
-	ValidateNonEmpty(for_date, "for_date", "required", errs)
+	ValidateNonEmpty(title, "title", "requis", errs)
+	ValidateNonEmpty(content, "content", "requis", errs)
+	ValidateNonEmpty(for_date, "for_date", "requis", errs)
 	ValidateDateTime(for_date, "for_date", "datetime", errs)
-	ValidateDateTimeInFuture(for_date, "for_date", "future", errs)
+	ValidateDateTimeInFuture(for_date, "for_date", "doit être une date future", errs)
 	return errs
 }

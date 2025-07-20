@@ -11,9 +11,9 @@ func ValidateUpdateBuildingInfoRequest(r *http.Request) ValidationErrors {
 	price := r.FormValue("price")
 	status := r.FormValue("status")
 
-	ValidateNonEmpty(title, "title", "required", errs)
-	ValidateNonEmpty(price, "price", "required", errs)
-	ValidateNonEmpty(status, "status", "required", errs)
+	ValidateNonEmpty(title, "title", "requis", errs)
+	ValidateNonEmpty(price, "price", "requis", errs)
+	ValidateNonEmpty(status, "status", "requis", errs)
 
 	return errs
 }
