@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"logispro/internal/constants"
 	"logispro/internal/db"
 	"logispro/internal/services/recommender"
 	"logispro/internal/shared/response_types"
+	"logispro/internal/utils"
 	"net/http"
 	"strconv"
 )
@@ -26,10 +26,17 @@ func (c *RecommenderController) GetForBuildingHandler(w http.ResponseWriter, r *
 			Error:      err,
 		}
 	}
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
 		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
@@ -47,7 +54,22 @@ func (c *RecommenderController) GetForBuildingHandler(w http.ResponseWriter, r *
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	contacts, err := c.Queries.GetContactsWithEmbeddings(ctx, userId)
+	var params db.GetContactsWithEmbeddingsParams
+	if rootId != nil {
+		params = db.GetContactsWithEmbeddingsParams{
+			UserID: userId,
+			UserID2: sql.NullInt64{
+				Valid: true,
+				Int64: *rootId,
+			},
+		}
+	} else {
+		params = db.GetContactsWithEmbeddingsParams{
+			UserID:  userId,
+			UserID2: sql.NullInt64{Valid: false},
+		}
+	}
+	contacts, err := c.Queries.GetContactsWithEmbeddings(ctx, params)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{

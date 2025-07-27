@@ -34,11 +34,16 @@ func (q *Queries) CountContactsByPhone(ctx context.Context, phone sql.NullString
 }
 
 const countUserContacts = `-- name: CountUserContacts :one
-SELECT COUNT(*) FROM contacts WHERE user_id = ?
+SELECT COUNT(*) FROM contacts WHERE (user_id = ? OR user_id = ?2) AND deleted_at IS NULL
 `
 
-func (q *Queries) CountUserContacts(ctx context.Context, userID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUserContacts, userID)
+type CountUserContactsParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
+
+func (q *Queries) CountUserContacts(ctx context.Context, arg CountUserContactsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUserContacts, arg.UserID, arg.UserID2)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -132,17 +137,17 @@ func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (s
 }
 
 const deleteContact = `-- name: DeleteContact :exec
-DELETE FROM contacts
-WHERE id = ? AND user_id = ?
+UPDATE contacts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND (user_id = ? OR user_id = ?3)
 `
 
 type DeleteContactParams struct {
-	ID     int64 `json:"id"`
-	UserID int64 `json:"user_id"`
+	ID      int64         `json:"id"`
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
 }
 
 func (q *Queries) DeleteContact(ctx context.Context, arg DeleteContactParams) error {
-	_, err := q.db.ExecContext(ctx, deleteContact, arg.ID, arg.UserID)
+	_, err := q.db.ExecContext(ctx, deleteContact, arg.ID, arg.UserID, arg.UserID2)
 	return err
 }
 
@@ -150,12 +155,17 @@ const getAllContacts = `-- name: GetAllContacts :many
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
-WHERE user_id = ?
+WHERE (user_id = ? OR user_id = ?2) AND deleted_at IS NULL
 ORDER BY id DESC
 `
 
-func (q *Queries) GetAllContacts(ctx context.Context, userID int64) ([]Contact, error) {
-	rows, err := q.db.QueryContext(ctx, getAllContacts, userID)
+type GetAllContactsParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
+
+func (q *Queries) GetAllContacts(ctx context.Context, arg GetAllContactsParams) ([]Contact, error) {
+	rows, err := q.db.QueryContext(ctx, getAllContacts, arg.UserID, arg.UserID2)
 	if err != nil {
 		return nil, err
 	}
@@ -210,16 +220,17 @@ const getContact = `-- name: GetContact :one
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
-WHERE id = ? AND user_id = ?
+WHERE id = ? AND (user_id = ? OR user_id = ?3) AND deleted_at IS NULL
 `
 
 type GetContactParams struct {
-	ID     int64 `json:"id"`
-	UserID int64 `json:"user_id"`
+	ID      int64         `json:"id"`
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
 }
 
 func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (Contact, error) {
-	row := q.db.QueryRowContext(ctx, getContact, arg.ID, arg.UserID)
+	row := q.db.QueryRowContext(ctx, getContact, arg.ID, arg.UserID, arg.UserID2)
 	var i Contact
 	err := row.Scan(
 		&i.ID,
@@ -276,13 +287,14 @@ SELECT
   user_id,
   phone
 FROM contacts
-WHERE user_id = ? AND id IN (/*SLICE:ids*/?)
+WHERE (user_id = ? OR user_id = ?2) AND id IN (/*SLICE:ids*/?) AND deleted_at IS NULL
 ORDER BY id DESC
 `
 
 type GetContactsByIdParams struct {
-	UserID int64   `json:"user_id"`
-	Ids    []int64 `json:"ids"`
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+	Ids     []int64       `json:"ids"`
 }
 
 type GetContactsByIdRow struct {
@@ -295,6 +307,7 @@ func (q *Queries) GetContactsById(ctx context.Context, arg GetContactsByIdParams
 	query := getContactsById
 	var queryParams []interface{}
 	queryParams = append(queryParams, arg.UserID)
+	queryParams = append(queryParams, arg.UserID2)
 	if len(arg.Ids) > 0 {
 		for _, v := range arg.Ids {
 			queryParams = append(queryParams, v)
@@ -329,12 +342,13 @@ const getContactsList = `-- name: GetContactsList :many
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
-WHERE id IN (/*SLICE:contact_ids*/?) AND user_id = ?
+WHERE id IN (/*SLICE:contact_ids*/?) AND (user_id = ? OR user_id = ?3) AND deleted_at IS NULL
 `
 
 type GetContactsListParams struct {
-	ContactIds []int64 `json:"contact_ids"`
-	UserID     int64   `json:"user_id"`
+	ContactIds []int64       `json:"contact_ids"`
+	UserID     int64         `json:"user_id"`
+	UserID2    sql.NullInt64 `json:"user_id_2"`
 }
 
 func (q *Queries) GetContactsList(ctx context.Context, arg GetContactsListParams) ([]Contact, error) {
@@ -349,6 +363,7 @@ func (q *Queries) GetContactsList(ctx context.Context, arg GetContactsListParams
 		query = strings.Replace(query, "/*SLICE:contact_ids*/?", "NULL", 1)
 	}
 	queryParams = append(queryParams, arg.UserID)
+	queryParams = append(queryParams, arg.UserID2)
 	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
@@ -406,17 +421,22 @@ SELECT
   contact_embeddings.embedding
 FROM contacts
 RIGHT JOIN contact_embeddings ON contact_embeddings.contact_id = contacts.id
-WHERE user_id = ?
+WHERE (user_id = ? OR user_id = ?2) AND deleted_at IS NULL
 ORDER BY contacts.id DESC
 `
+
+type GetContactsWithEmbeddingsParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
 
 type GetContactsWithEmbeddingsRow struct {
 	ID        sql.NullInt64 `json:"id"`
 	Embedding string        `json:"embedding"`
 }
 
-func (q *Queries) GetContactsWithEmbeddings(ctx context.Context, userID int64) ([]GetContactsWithEmbeddingsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getContactsWithEmbeddings, userID)
+func (q *Queries) GetContactsWithEmbeddings(ctx context.Context, arg GetContactsWithEmbeddingsParams) ([]GetContactsWithEmbeddingsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContactsWithEmbeddings, arg.UserID, arg.UserID2)
 	if err != nil {
 		return nil, err
 	}

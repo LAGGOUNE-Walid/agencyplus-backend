@@ -1,9 +1,9 @@
 -- name: CreateUser :execresult
 INSERT INTO users (
-  fullname, role, email, phone, agency_name, agency_address,
+  fullname, role, root_id, email, phone, agency_name, agency_address,
   agency_logo, wilaya, daira, password
 ) VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );
 
 -- name: UpdateUser :exec

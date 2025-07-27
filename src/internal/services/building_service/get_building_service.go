@@ -2,6 +2,7 @@ package building_service
 
 import (
 	"context"
+	"database/sql"
 	"logispro/internal/db"
 )
 
@@ -14,9 +15,16 @@ type FullBuilding struct {
 	Documents []db.BuildingDocument `json:"documents"`
 }
 
-func (s *GetBuildingService) All(userId int64, offset int64, limit int64, ctx context.Context) ([]FullBuilding, error) {
+func (s *GetBuildingService) All(userId int64, rootId *int64, offset int64, limit int64, ctx context.Context) ([]FullBuilding, error) {
 	var full []FullBuilding
-	buildings, err := s.Queries.ListPaginatedBuildings(ctx, db.ListPaginatedBuildingsParams{UserID: userId, Offset: offset, Limit: limit})
+	var params db.ListPaginatedBuildingsParams
+	params.UserID = userId
+	params.Offset = offset
+	params.Limit = limit
+	if rootId != nil {
+		params.UserID2 = sql.NullInt64{Valid: true, Int64: *rootId}
+	}
+	buildings, err := s.Queries.ListPaginatedBuildings(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +64,15 @@ func (s *GetBuildingService) All(userId int64, offset int64, limit int64, ctx co
 	return full, nil
 }
 
-func (s *GetBuildingService) Get(userId int64, id int64, ctx context.Context) (FullBuilding, error) {
+func (s *GetBuildingService) Get(userId int64, rootId *int64, id int64, ctx context.Context) (FullBuilding, error) {
 	var full FullBuilding
-	b, err := s.Queries.GetBuilding(ctx, db.GetBuildingParams{ID: id, UserID: userId})
+	var params db.GetBuildingParams
+	params.ID = id
+	params.UserID = userId
+	if rootId != nil {
+		params.UserID = userId
+	}
+	b, err := s.Queries.GetBuilding(ctx, params)
 	if err != nil {
 		return full, err
 	}

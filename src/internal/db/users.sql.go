@@ -51,16 +51,17 @@ func (q *Queries) CountUsersByPhone(ctx context.Context, phone string) (int64, e
 
 const createUser = `-- name: CreateUser :execresult
 INSERT INTO users (
-  fullname, role, email, phone, agency_name, agency_address,
+  fullname, role, root_id, email, phone, agency_name, agency_address,
   agency_logo, wilaya, daira, password
 ) VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 `
 
 type CreateUserParams struct {
 	Fullname      string         `json:"fullname"`
 	Role          int64          `json:"role"`
+	RootID        sql.NullInt64  `json:"root_id"`
 	Email         string         `json:"email"`
 	Phone         string         `json:"phone"`
 	AgencyName    string         `json:"agency_name"`
@@ -75,6 +76,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 	return q.db.ExecContext(ctx, createUser,
 		arg.Fullname,
 		arg.Role,
+		arg.RootID,
 		arg.Email,
 		arg.Phone,
 		arg.AgencyName,

@@ -6,3 +6,4 @@ const ROLE_NORMAL int64 = 2
 const UserIDContextKey string = "user_id"
 const UserRoleContextKey string = "user_role"
 const UserEmailContextKey string = "user_email"
+const UserRootContextKey string = "root_id"

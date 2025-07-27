@@ -216,7 +216,20 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "role missing in token", http.StatusUnauthorized)
 			return
 		}
+
+		var rootIdPtr *int64
+		if rawRootId, exists := claims[constants.UserRootContextKey]; exists && rawRootId != nil {
+			if floatVal, ok := rawRootId.(float64); ok {
+				id := int64(floatVal)
+				rootIdPtr = &id
+			} else {
+				http.Error(w, "invalid root_id in token", http.StatusUnauthorized)
+				return
+			}
+		}
+
 		ctx := r.Context()
+		ctx = context.WithValue(ctx, constants.UserRootContextKey, rootIdPtr)
 		ctx = context.WithValue(ctx, constants.UserIDContextKey, int64(userID))
 		ctx = context.WithValue(ctx, constants.UserRoleContextKey, int64(role))
 		next.ServeHTTP(w, r.WithContext(ctx))

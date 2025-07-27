@@ -40,6 +40,7 @@ func (s *CreateUserService) Create(req requests.CreateUserRequest) (int64, strin
 		Wilaya:        req.Wilaya,
 		Daira:         req.Daira,
 		Password:      hashedPassword,
+		RootID:        sql.NullInt64{Int64: *req.RootId, Valid: req.RootId != nil},
 	}
 	res, err := s.Queries.CreateUser(context.Background(), arg)
 	if err != nil {
@@ -50,7 +51,7 @@ func (s *CreateUserService) Create(req requests.CreateUserRequest) (int64, strin
 		return 0, "", err
 	}
 
-	token, err := utils.GenerateJWT(lastId, arg.Email, arg.Role)
+	token, err := utils.GenerateJWT(lastId, arg.RootID, arg.Email, arg.Role)
 	if err != nil {
 		return 0, "", err
 	}

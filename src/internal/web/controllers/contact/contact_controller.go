@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"logispro/internal/constants"
 	"logispro/internal/services/contact_service"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/utils"
@@ -22,14 +21,6 @@ type ContactController struct {
 func (c *ContactController) CreateContactHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
 	contactService := c.CreateContactService
 	req, validationErrors, err := requests.ParseCreateContactRequest(r, contactService.Queries, r.Context())
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
-		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
-			StatusCode: http.StatusInternalServerError,
-		}
-	}
-	req.UserID = userId
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -42,6 +33,16 @@ func (c *ContactController) CreateContactHandler(w http.ResponseWriter, r *http.
 			StatusCode: http.StatusBadRequest,
 		}
 	}
+
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	req.UserID = userId
+
 	contactId, err := contactService.Create(r.Context(), req)
 	if err != nil {
 		return response_types.ApiResponse{
@@ -59,14 +60,21 @@ func (c *ContactController) CreateContactHandler(w http.ResponseWriter, r *http.
 }
 
 func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
 		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			Error:      err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	contacts, err := c.GetContactService.All(userId, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	contacts, err := c.GetContactService.All(userId, rootId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -80,14 +88,21 @@ func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
 		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			Error:      err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	count, err := c.GetContactService.Count(userId, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	count, err := c.GetContactService.Count(userId, rootId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -102,10 +117,10 @@ func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.
 }
 
 func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
 		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			Error:      err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
@@ -121,7 +136,14 @@ func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *htt
 		idInt := utils.ParseInt64(idStr)
 		contactsIds = append(contactsIds, idInt)
 	}
-	contacts, err := c.GetContactService.FinAll(contactsIds, userId, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	contacts, err := c.GetContactService.FindAll(contactsIds, userId, rootId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -143,14 +165,21 @@ func (c *ContactController) GetContactHandler(w http.ResponseWriter, r *http.Req
 			Error:      fmt.Errorf("invalid contact ID"),
 		}
 	}
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
 		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			Error:      err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	contact, err := c.GetContactService.Get(id, userId, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	contact, err := c.GetContactService.Get(id, userId, rootId, r.Context())
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -180,10 +209,10 @@ func (c *ContactController) DeleteContactHandler(w http.ResponseWriter, r *http.
 			Error:      err,
 		}
 	}
-	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
-	if !ok {
+	userId, err := utils.GetUserIdFromContext(r.Context())
+	if err != nil {
 		return response_types.ApiResponse{
-			Error:      fmt.Errorf("failed to format user id %v to int64", r.Context().Value(constants.UserIDContextKey)),
+			Error:      err,
 			StatusCode: http.StatusInternalServerError,
 		}
 	}

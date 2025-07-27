@@ -6,6 +6,7 @@ import (
 	"logispro/internal/web/validations"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 type CreateUserRequest struct {
@@ -19,6 +20,7 @@ type CreateUserRequest struct {
 	Password      string
 	AgencyLogo    multipart.File
 	LogoHeader    *multipart.FileHeader
+	RootId        *int64
 }
 
 func ParseCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Context) (CreateUserRequest, validations.ValidationErrors, error) {
@@ -47,6 +49,14 @@ func ParseCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Context)
 		}
 		req.AgencyLogo = file
 		defer file.Close()
+	}
+
+	if rootIdStr := r.FormValue("root_id"); rootIdStr != "" {
+		if rootIdInt, err := strconv.ParseInt(rootIdStr, 10, 64); err == nil {
+			req.RootId = &rootIdInt
+		} else {
+			return req, nil, err
+		}
 	}
 
 	return req, validationErrors, nil

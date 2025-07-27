@@ -12,27 +12,33 @@ import (
 )
 
 const countUserBuildings = `-- name: CountUserBuildings :one
-SELECT count(id) FROM buildings WHERE user_id = ? and deleted_at IS NULL
+SELECT count(id) FROM buildings WHERE (user_id = ? OR user_id = ?2) and deleted_at IS NULL
 `
 
-func (q *Queries) CountUserBuildings(ctx context.Context, userID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUserBuildings, userID)
+type CountUserBuildingsParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
+
+func (q *Queries) CountUserBuildings(ctx context.Context, arg CountUserBuildingsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUserBuildings, arg.UserID, arg.UserID2)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const countUserBuildingsByStatus = `-- name: CountUserBuildingsByStatus :one
-SELECT count(id) FROM buildings WHERE user_id = ? and status = ? and deleted_at IS NULL
+SELECT count(id) FROM buildings WHERE (user_id = ? OR user_id = ?2) and status = ?3 and deleted_at IS NULL
 `
 
 type CountUserBuildingsByStatusParams struct {
-	UserID int64          `json:"user_id"`
-	Status sql.NullString `json:"status"`
+	UserID  int64          `json:"user_id"`
+	UserID2 sql.NullInt64  `json:"user_id_2"`
+	Status  sql.NullString `json:"status"`
 }
 
 func (q *Queries) CountUserBuildingsByStatus(ctx context.Context, arg CountUserBuildingsByStatusParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUserBuildingsByStatus, arg.UserID, arg.Status)
+	row := q.db.QueryRowContext(ctx, countUserBuildingsByStatus, arg.UserID, arg.UserID2, arg.Status)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -217,93 +223,109 @@ func (q *Queries) CreateBuildingVue(ctx context.Context, arg CreateBuildingVuePa
 
 const deleteBuilding = `-- name: DeleteBuilding :exec
 UPDATE buildings SET deleted_at = CURRENT_TIMESTAMP
-WHERE user_id = ? AND id = ? AND deleted_at is NULL
+WHERE (user_id = ? OR user_id = ?3) AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingParams struct {
-	UserID int64 `json:"user_id"`
-	ID     int64 `json:"id"`
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+	ID      int64         `json:"id"`
 }
 
 func (q *Queries) DeleteBuilding(ctx context.Context, arg DeleteBuildingParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuilding, arg.UserID, arg.ID)
+	_, err := q.db.ExecContext(ctx, deleteBuilding, arg.UserID, arg.UserID2, arg.ID)
 	return err
 }
 
 const deleteBuildingDocument = `-- name: DeleteBuildingDocument :exec
 UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL
+WHERE building_id = ? AND (user_id = ? OR user_id = ?4) AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingDocumentParams struct {
-	BuildingID int64 `json:"building_id"`
-	UserID     int64 `json:"user_id"`
-	ID         int64 `json:"id"`
+	BuildingID int64         `json:"building_id"`
+	UserID     int64         `json:"user_id"`
+	UserID2    sql.NullInt64 `json:"user_id_2"`
+	ID         int64         `json:"id"`
 }
 
 func (q *Queries) DeleteBuildingDocument(ctx context.Context, arg DeleteBuildingDocumentParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingDocument, arg.BuildingID, arg.UserID, arg.ID)
+	_, err := q.db.ExecContext(ctx, deleteBuildingDocument,
+		arg.BuildingID,
+		arg.UserID,
+		arg.UserID2,
+		arg.ID,
+	)
 	return err
 }
 
 const deleteBuildingDocuments = `-- name: DeleteBuildingDocuments :exec
 UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND user_id = ? AND deleted_at is NULL
+WHERE building_id = ? AND (user_id = ? OR user_id = ?3) AND deleted_at is NULL
 `
 
 type DeleteBuildingDocumentsParams struct {
-	BuildingID int64 `json:"building_id"`
-	UserID     int64 `json:"user_id"`
+	BuildingID int64         `json:"building_id"`
+	UserID     int64         `json:"user_id"`
+	UserID2    sql.NullInt64 `json:"user_id_2"`
 }
 
 func (q *Queries) DeleteBuildingDocuments(ctx context.Context, arg DeleteBuildingDocumentsParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingDocuments, arg.BuildingID, arg.UserID)
+	_, err := q.db.ExecContext(ctx, deleteBuildingDocuments, arg.BuildingID, arg.UserID, arg.UserID2)
 	return err
 }
 
 const deleteBuildingImage = `-- name: DeleteBuildingImage :exec
 UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND user_id = ? AND id = ? AND deleted_at is NULL
+WHERE building_id = ? AND (user_id = ? OR user_id = ?4) AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingImageParams struct {
-	BuildingID int64 `json:"building_id"`
-	UserID     int64 `json:"user_id"`
-	ID         int64 `json:"id"`
+	BuildingID int64         `json:"building_id"`
+	UserID     int64         `json:"user_id"`
+	UserID2    sql.NullInt64 `json:"user_id_2"`
+	ID         int64         `json:"id"`
 }
 
 func (q *Queries) DeleteBuildingImage(ctx context.Context, arg DeleteBuildingImageParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingImage, arg.BuildingID, arg.UserID, arg.ID)
+	_, err := q.db.ExecContext(ctx, deleteBuildingImage,
+		arg.BuildingID,
+		arg.UserID,
+		arg.UserID2,
+		arg.ID,
+	)
 	return err
 }
 
 const deleteBuildingImages = `-- name: DeleteBuildingImages :exec
 UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND user_id = ? AND deleted_at is NULL
+WHERE building_id = ? AND (user_id = ? OR user_id = ?3) AND deleted_at is NULL
 `
 
 type DeleteBuildingImagesParams struct {
-	BuildingID int64 `json:"building_id"`
-	UserID     int64 `json:"user_id"`
+	BuildingID int64         `json:"building_id"`
+	UserID     int64         `json:"user_id"`
+	UserID2    sql.NullInt64 `json:"user_id_2"`
 }
 
 func (q *Queries) DeleteBuildingImages(ctx context.Context, arg DeleteBuildingImagesParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingImages, arg.BuildingID, arg.UserID)
+	_, err := q.db.ExecContext(ctx, deleteBuildingImages, arg.BuildingID, arg.UserID, arg.UserID2)
 	return err
 }
 
 const getBuilding = `-- name: GetBuilding :one
 SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
-WHERE user_id = ? AND id = ? AND deleted_at is NULL
+WHERE (user_id = ? OR user_id = ?3) AND id = ? AND deleted_at is NULL
 `
 
 type GetBuildingParams struct {
-	UserID int64 `json:"user_id"`
-	ID     int64 `json:"id"`
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+	ID      int64         `json:"id"`
 }
 
 func (q *Queries) GetBuilding(ctx context.Context, arg GetBuildingParams) (Building, error) {
-	row := q.db.QueryRowContext(ctx, getBuilding, arg.UserID, arg.ID)
+	row := q.db.QueryRowContext(ctx, getBuilding, arg.UserID, arg.UserID2, arg.ID)
 	var i Building
 	err := row.Scan(
 		&i.ID,
@@ -375,16 +397,21 @@ func (q *Queries) GetBuildingEmbeddings(ctx context.Context, buildingID int64) (
 }
 
 const getBuildingsDairas = `-- name: GetBuildingsDairas :many
-SELECT count(id), daira from buildings where user_id = ? group by daira
+SELECT count(id), daira from buildings where (user_id = ? OR user_id = ?2) group by daira
 `
+
+type GetBuildingsDairasParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
 
 type GetBuildingsDairasRow struct {
 	Count int64          `json:"count"`
 	Daira sql.NullString `json:"daira"`
 }
 
-func (q *Queries) GetBuildingsDairas(ctx context.Context, userID int64) ([]GetBuildingsDairasRow, error) {
-	rows, err := q.db.QueryContext(ctx, getBuildingsDairas, userID)
+func (q *Queries) GetBuildingsDairas(ctx context.Context, arg GetBuildingsDairasParams) ([]GetBuildingsDairasRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBuildingsDairas, arg.UserID, arg.UserID2)
 	if err != nil {
 		return nil, err
 	}
@@ -407,8 +434,13 @@ func (q *Queries) GetBuildingsDairas(ctx context.Context, userID int64) ([]GetBu
 }
 
 const getBuildingsMap = `-- name: GetBuildingsMap :many
-SELECT id, title, location from buildings where user_id = ?
+SELECT id, title, location from buildings where (user_id = ? OR user_id = ?2)
 `
+
+type GetBuildingsMapParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
 
 type GetBuildingsMapRow struct {
 	ID       int64          `json:"id"`
@@ -416,8 +448,8 @@ type GetBuildingsMapRow struct {
 	Location sql.NullString `json:"location"`
 }
 
-func (q *Queries) GetBuildingsMap(ctx context.Context, userID int64) ([]GetBuildingsMapRow, error) {
-	rows, err := q.db.QueryContext(ctx, getBuildingsMap, userID)
+func (q *Queries) GetBuildingsMap(ctx context.Context, arg GetBuildingsMapParams) ([]GetBuildingsMapRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBuildingsMap, arg.UserID, arg.UserID2)
 	if err != nil {
 		return nil, err
 	}
@@ -440,8 +472,13 @@ func (q *Queries) GetBuildingsMap(ctx context.Context, userID int64) ([]GetBuild
 }
 
 const getBuildingsTotalChangeRate = `-- name: GetBuildingsTotalChangeRate :one
-SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE buildings.user_id = ?
+SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE (buildings.user_id = ? OR buildings.user_id = ?2)
 `
+
+type GetBuildingsTotalChangeRateParams struct {
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+}
 
 type GetBuildingsTotalChangeRateRow struct {
 	CurrentYearTotal sql.NullFloat64 `json:"current_year_total"`
@@ -449,8 +486,8 @@ type GetBuildingsTotalChangeRateRow struct {
 	PercentageChange interface{}     `json:"percentage_change"`
 }
 
-func (q *Queries) GetBuildingsTotalChangeRate(ctx context.Context, userID int64) (GetBuildingsTotalChangeRateRow, error) {
-	row := q.db.QueryRowContext(ctx, getBuildingsTotalChangeRate, userID)
+func (q *Queries) GetBuildingsTotalChangeRate(ctx context.Context, arg GetBuildingsTotalChangeRateParams) (GetBuildingsTotalChangeRateRow, error) {
+	row := q.db.QueryRowContext(ctx, getBuildingsTotalChangeRate, arg.UserID, arg.UserID2)
 	var i GetBuildingsTotalChangeRateRow
 	err := row.Scan(&i.CurrentYearTotal, &i.LastYearTotal, &i.PercentageChange)
 	return i, err
@@ -567,19 +604,25 @@ func (q *Queries) ListImagesForBuildingIDs(ctx context.Context, buildingIds []in
 
 const listPaginatedBuildings = `-- name: ListPaginatedBuildings :many
 SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
-WHERE user_id = ? AND deleted_at IS NULL
+WHERE (user_id = ? OR user_id = ?4) AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT ? OFFSET ?
 `
 
 type ListPaginatedBuildingsParams struct {
-	UserID int64 `json:"user_id"`
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	UserID  int64         `json:"user_id"`
+	UserID2 sql.NullInt64 `json:"user_id_2"`
+	Limit   int64         `json:"limit"`
+	Offset  int64         `json:"offset"`
 }
 
 func (q *Queries) ListPaginatedBuildings(ctx context.Context, arg ListPaginatedBuildingsParams) ([]Building, error) {
-	rows, err := q.db.QueryContext(ctx, listPaginatedBuildings, arg.UserID, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, listPaginatedBuildings,
+		arg.UserID,
+		arg.UserID2,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -696,7 +739,7 @@ SET
   year_built = ?,
   description = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE id = ? AND user_id = ? AND deleted_at is NULL
+WHERE (id = ? OR user_id = ?45) AND user_id = ? AND deleted_at is NULL
 `
 
 type UpdateBuildingParams struct {
@@ -743,6 +786,7 @@ type UpdateBuildingParams struct {
 	YearBuilt                  sql.NullInt64   `json:"year_built"`
 	Description                sql.NullString  `json:"description"`
 	ID                         int64           `json:"id"`
+	UserID2                    sql.NullInt64   `json:"user_id_2"`
 	UserID                     int64           `json:"user_id"`
 }
 
@@ -791,6 +835,7 @@ func (q *Queries) UpdateBuilding(ctx context.Context, arg UpdateBuildingParams) 
 		arg.YearBuilt,
 		arg.Description,
 		arg.ID,
+		arg.UserID2,
 		arg.UserID,
 	)
 	return err

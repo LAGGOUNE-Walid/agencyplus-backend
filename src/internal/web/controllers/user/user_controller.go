@@ -67,6 +67,7 @@ func (c *UserController) Auth(w http.ResponseWriter, r *http.Request) response_t
 				"fullname": user.Fullname,
 				"email":    user.Email,
 				"role":     user.Role,
+				"rootId":   user.RootID,
 			},
 			"token": token,
 		},

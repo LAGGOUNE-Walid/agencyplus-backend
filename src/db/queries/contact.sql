@@ -37,30 +37,29 @@ SELECT COUNT(*) FROM contacts WHERE phone = ?;
 SELECT COUNT(*) FROM contacts WHERE email = ?;
 
 -- name: CountUserContacts :one
-SELECT COUNT(*) FROM contacts WHERE user_id = ?;
+SELECT COUNT(*) FROM contacts WHERE (user_id = ? OR user_id = sqlc.narg(user_id_2)) AND deleted_at IS NULL;
 
 -- name: GetContact :one
 SELECT
   *
 FROM contacts
-WHERE id = ? AND user_id = ?;
+WHERE id = ? AND (user_id = ? OR user_id = sqlc.narg(user_id_2)) AND deleted_at IS NULL;
 
 -- name: GetContactsList :many
 SELECT
   *
 FROM contacts
-WHERE id IN (sqlc.slice('contact_ids')) AND user_id = ?;
+WHERE id IN (sqlc.slice('contact_ids')) AND (user_id = ? OR user_id = sqlc.narg(user_id_2)) AND deleted_at IS NULL;
 
 -- name: GetAllContacts :many
 SELECT
   *
 FROM contacts
-WHERE user_id = ?
+WHERE (user_id = ? OR user_id = sqlc.narg(user_id_2)) AND deleted_at IS NULL
 ORDER BY id DESC;
 
 -- name: DeleteContact :exec
-DELETE FROM contacts
-WHERE id = ? AND user_id = ?;
+UPDATE contacts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND (user_id = ? OR user_id = sqlc.narg(user_id_2));
 
 -- name: GetContactsById :many
 SELECT
@@ -68,7 +67,7 @@ SELECT
   user_id,
   phone
 FROM contacts
-WHERE user_id = ? AND id IN (sqlc.slice('ids'))
+WHERE (user_id = ? OR user_id = sqlc.narg(user_id_2)) AND id IN (sqlc.slice('ids')) AND deleted_at IS NULL
 ORDER BY id DESC;
 
 -- name: InsertContactEmbeddings :exec
@@ -83,5 +82,5 @@ SELECT
   contact_embeddings.embedding
 FROM contacts
 RIGHT JOIN contact_embeddings ON contact_embeddings.contact_id = contacts.id
-WHERE user_id = ?
+WHERE (user_id = ? OR user_id = sqlc.narg(user_id_2)) AND deleted_at IS NULL
 ORDER BY contacts.id DESC;

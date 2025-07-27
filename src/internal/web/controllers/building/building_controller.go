@@ -69,7 +69,14 @@ func (c *BuildingController) GetBuildingsHandler(w http.ResponseWriter, r *http.
 	pageString := r.URL.Query().Get("page")
 	page := utils.ParseInt64(pageString)
 	offset := (page - 1) * 20
-	buildings, err := c.GetBuildingService.All(userId, offset, 20, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	buildings, err := c.GetBuildingService.All(userId, rootId, offset, 20, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -97,7 +104,14 @@ func (c *BuildingController) GetBuildingHandler(w http.ResponseWriter, r *http.R
 			Error:      fmt.Errorf("invalid building ID"),
 		}
 	}
-	b, err := c.GetBuildingService.Get(userId, id, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	b, err := c.GetBuildingService.Get(userId, rootId, id, r.Context())
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -177,7 +191,14 @@ func (c *BuildingController) DeleteBuildingHandler(w http.ResponseWriter, r *htt
 			Error:      fmt.Errorf("invalid building ID"),
 		}
 	}
-	err = c.UpdateBuildingService.Delete(ctx, userId, id)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	err = c.UpdateBuildingService.Delete(ctx, userId, rootId, id)
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -254,7 +275,14 @@ func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r
 			Error:      fmt.Errorf("invalid building imageId"),
 		}
 	}
-	err = c.UpdateBuildingService.DeleteImage(ctx, userId, buildingId, imageId)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	err = c.UpdateBuildingService.DeleteImage(ctx, userId, rootId, buildingId, imageId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -332,7 +360,14 @@ func (c *BuildingController) DeleteBuildingDocumentHandler(w http.ResponseWriter
 			Error:      fmt.Errorf("invalid building documentId"),
 		}
 	}
-	err = c.UpdateBuildingService.DeleteDocument(ctx, userId, buildingId, documentId)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	err = c.UpdateBuildingService.DeleteDocument(ctx, userId, rootId, buildingId, documentId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -382,7 +417,14 @@ func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	statistics, err := c.GetBuildingsStatisticsService.Get(userId, ctx)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	statistics, err := c.GetBuildingsStatisticsService.Get(userId, rootId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -410,7 +452,14 @@ func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *h
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	gain, err := c.GetBuildingsStatisticsService.GetBuildingsTotalChangeRate(userId, ctx)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	gain, err := c.GetBuildingsStatisticsService.GetBuildingsTotalChangeRate(userId, rootId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -438,7 +487,14 @@ func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, 
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	dairas, err := c.GetBuildingsStatisticsService.GetBuildingsDairaDistribution(userId, ctx)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	dairas, err := c.GetBuildingsStatisticsService.GetBuildingsDairaDistribution(userId, rootId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -466,7 +522,14 @@ func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Reques
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	location, err := c.GetBuildingsStatisticsService.GetBuildingsLocations(userId, ctx)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	location, err := c.GetBuildingsStatisticsService.GetBuildingsLocations(userId, rootId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{

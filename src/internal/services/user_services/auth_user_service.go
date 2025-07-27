@@ -17,7 +17,6 @@ type AuthService struct {
 func (s *AuthService) Authenticate(ctx context.Context, req requests.AuthRequest) (db.User, string, error) {
 	user, err := s.Queries.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		return db.User{}, "", err
 		return db.User{}, "", fmt.Errorf("user not found")
 	}
 
@@ -25,7 +24,7 @@ func (s *AuthService) Authenticate(ctx context.Context, req requests.AuthRequest
 		return db.User{}, "", fmt.Errorf("invalid credentials")
 	}
 
-	token, err := utils.GenerateJWT(user.ID, user.Email, user.Role)
+	token, err := utils.GenerateJWT(user.ID, user.RootID, user.Email, user.Role)
 	if err != nil {
 		return db.User{}, "", fmt.Errorf("could not generate token")
 	}

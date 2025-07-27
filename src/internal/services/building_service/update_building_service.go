@@ -16,23 +16,40 @@ type UpdateBuildingService struct {
 	DB      *sql.DB
 }
 
-func (s *UpdateBuildingService) Delete(ctx context.Context, userId int64, buildingId int64) error {
+func (s *UpdateBuildingService) Delete(ctx context.Context, userId int64, rootId *int64, buildingId int64) error {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	qtx := s.Queries.WithTx(tx)
-
-	err = qtx.DeleteBuilding(ctx, db.DeleteBuildingParams{UserID: userId, ID: buildingId})
+	var params1 db.DeleteBuildingParams
+	params1.UserID = userId
+	params1.ID = buildingId
+	if rootId != nil {
+		params1.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
+	}
+	err = qtx.DeleteBuilding(ctx, params1)
 	if err != nil {
 		return err
 	}
-	err = qtx.DeleteBuildingImages(ctx, db.DeleteBuildingImagesParams{UserID: userId, BuildingID: buildingId})
+	var params2 db.DeleteBuildingImagesParams
+	params2.UserID = userId
+	params2.BuildingID = buildingId
+	if rootId != nil {
+		params2.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
+	}
+	err = qtx.DeleteBuildingImages(ctx, params2)
 	if err != nil {
 		return err
 	}
-	err = qtx.DeleteBuildingDocuments(ctx, db.DeleteBuildingDocumentsParams{UserID: userId, BuildingID: buildingId})
+	var params3 db.DeleteBuildingDocumentsParams
+	params3.UserID = userId
+	params3.BuildingID = buildingId
+	if rootId != nil {
+		params3.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
+	}
+	err = qtx.DeleteBuildingDocuments(ctx, params3)
 	if err != nil {
 		return err
 	}
@@ -109,12 +126,16 @@ func (s *UpdateBuildingService) AddImages(ctx context.Context, req requests.Upda
 	return nil
 }
 
-func (s *UpdateBuildingService) DeleteImage(ctx context.Context, userId int64, buildingId int64, imageId int64) error {
-	return s.Queries.DeleteBuildingImage(ctx, db.DeleteBuildingImageParams{
+func (s *UpdateBuildingService) DeleteImage(ctx context.Context, userId int64, rootId *int64, buildingId int64, imageId int64) error {
+	params := db.DeleteBuildingImageParams{
 		BuildingID: buildingId,
 		UserID:     userId,
 		ID:         imageId,
-	})
+	}
+	if rootId != nil {
+		params.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
+	}
+	return s.Queries.DeleteBuildingImage(ctx, params)
 }
 
 func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.UpdateBuildingDocuments, buildingId int64) error {
@@ -148,12 +169,16 @@ func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.U
 	return nil
 }
 
-func (s *UpdateBuildingService) DeleteDocument(ctx context.Context, userId int64, buildingId int64, documentId int64) error {
-	return s.Queries.DeleteBuildingDocument(ctx, db.DeleteBuildingDocumentParams{
+func (s *UpdateBuildingService) DeleteDocument(ctx context.Context, userId int64, rootId *int64, buildingId int64, documentId int64) error {
+	params := db.DeleteBuildingDocumentParams{
 		BuildingID: buildingId,
 		UserID:     userId,
 		ID:         documentId,
-	})
+	}
+	if rootId != nil {
+		params.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
+	}
+	return s.Queries.DeleteBuildingDocument(ctx, params)
 }
 
 func (s *UpdateBuildingService) AddVue(ctx context.Context, req requests.CreateBuildingVueRequest) error {
