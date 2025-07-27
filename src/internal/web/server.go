@@ -164,6 +164,7 @@ func (s *Server) Run() {
 	mux.Handle("DELETE /calendar_events/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.DeleteCalendarEventHandler)))
 	mux.Handle("GET /calendar_events", AuthMiddleware(s.makeHttpHandler(s.Controller.CalendarController.GetCalendarEventsHandler)))
 	mux.Handle("GET /get-building-recommendations/{building_id}", AuthMiddleware(s.makeHttpHandler(s.Controller.RecommenderController.GetForBuildingHandler)))
+	mux.Handle("GET /get-contact-recommendations/{contact_id}", AuthMiddleware(s.makeHttpHandler(s.Controller.RecommenderController.GetForContactsHandler)))
 	mux.Handle("GET /buildings-daira-distributions", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetDairaDistributionHandler)))
 	mux.Handle("GET /buildings-map", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetMapHandler)))
 

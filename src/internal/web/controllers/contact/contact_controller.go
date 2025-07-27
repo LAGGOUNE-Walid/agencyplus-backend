@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"logispro/internal/db"
 	"logispro/internal/services/contact_service"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/utils"
@@ -74,7 +75,17 @@ func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Re
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	contacts, err := c.GetContactService.All(userId, rootId, r.Context())
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetContactService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	contacts, err := c.GetContactService.All(agencyUsersId, rootId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -102,7 +113,17 @@ func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	count, err := c.GetContactService.Count(userId, rootId, r.Context())
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetContactService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	count, err := c.GetContactService.Count(agencyUsersId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -143,7 +164,17 @@ func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *htt
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	contacts, err := c.GetContactService.FindAll(contactsIds, userId, rootId, r.Context())
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetContactService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	contacts, err := c.GetContactService.FindAll(contactsIds, agencyUsersId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -179,7 +210,17 @@ func (c *ContactController) GetContactHandler(w http.ResponseWriter, r *http.Req
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	contact, err := c.GetContactService.Get(id, userId, rootId, r.Context())
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetContactService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	contact, err := c.GetContactService.Get(id, agencyUsersId, r.Context())
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -218,8 +259,24 @@ func (c *ContactController) DeleteContactHandler(w http.ResponseWriter, r *http.
 	}
 
 	ctx := r.Context()
-
-	err = c.DeleteContactService.Delete(id, userId, ctx)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetContactService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	err = c.DeleteContactService.Delete(id, agencyUsersId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{

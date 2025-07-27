@@ -34,16 +34,21 @@ func (q *Queries) CountContactsByPhone(ctx context.Context, phone sql.NullString
 }
 
 const countUserContacts = `-- name: CountUserContacts :one
-SELECT COUNT(*) FROM contacts WHERE (user_id = ? OR user_id = ?2) AND deleted_at IS NULL
+SELECT COUNT(*) FROM contacts WHERE user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
 `
 
-type CountUserContactsParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
-
-func (q *Queries) CountUserContacts(ctx context.Context, arg CountUserContactsParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUserContacts, arg.UserID, arg.UserID2)
+func (q *Queries) CountUserContacts(ctx context.Context, usersID []int64) (int64, error) {
+	query := countUserContacts
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -137,17 +142,27 @@ func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (s
 }
 
 const deleteContact = `-- name: DeleteContact :exec
-UPDATE contacts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND (user_id = ? OR user_id = ?3)
+UPDATE contacts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id IN (/*SLICE:users_id*/?)
 `
 
 type DeleteContactParams struct {
-	ID      int64         `json:"id"`
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
+	ID      int64   `json:"id"`
+	UsersID []int64 `json:"users_id"`
 }
 
 func (q *Queries) DeleteContact(ctx context.Context, arg DeleteContactParams) error {
-	_, err := q.db.ExecContext(ctx, deleteContact, arg.ID, arg.UserID, arg.UserID2)
+	query := deleteContact
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
@@ -155,17 +170,22 @@ const getAllContacts = `-- name: GetAllContacts :many
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
-WHERE (user_id = ? OR user_id = ?2) AND deleted_at IS NULL
+WHERE user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
 ORDER BY id DESC
 `
 
-type GetAllContactsParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
-
-func (q *Queries) GetAllContacts(ctx context.Context, arg GetAllContactsParams) ([]Contact, error) {
-	rows, err := q.db.QueryContext(ctx, getAllContacts, arg.UserID, arg.UserID2)
+func (q *Queries) GetAllContacts(ctx context.Context, usersID []int64) ([]Contact, error) {
+	query := getAllContacts
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -220,17 +240,27 @@ const getContact = `-- name: GetContact :one
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
-WHERE id = ? AND (user_id = ? OR user_id = ?3) AND deleted_at IS NULL
+WHERE id = ? AND user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
 `
 
 type GetContactParams struct {
-	ID      int64         `json:"id"`
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
+	ID      int64   `json:"id"`
+	UsersID []int64 `json:"users_id"`
 }
 
 func (q *Queries) GetContact(ctx context.Context, arg GetContactParams) (Contact, error) {
-	row := q.db.QueryRowContext(ctx, getContact, arg.ID, arg.UserID, arg.UserID2)
+	query := getContact
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var i Contact
 	err := row.Scan(
 		&i.ID,
@@ -287,14 +317,13 @@ SELECT
   user_id,
   phone
 FROM contacts
-WHERE (user_id = ? OR user_id = ?2) AND id IN (/*SLICE:ids*/?) AND deleted_at IS NULL
+WHERE user_id IN (/*SLICE:users_id*/?) AND id IN (/*SLICE:ids*/?) AND deleted_at IS NULL
 ORDER BY id DESC
 `
 
 type GetContactsByIdParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-	Ids     []int64       `json:"ids"`
+	UsersID []int64 `json:"users_id"`
+	Ids     []int64 `json:"ids"`
 }
 
 type GetContactsByIdRow struct {
@@ -306,8 +335,14 @@ type GetContactsByIdRow struct {
 func (q *Queries) GetContactsById(ctx context.Context, arg GetContactsByIdParams) ([]GetContactsByIdRow, error) {
 	query := getContactsById
 	var queryParams []interface{}
-	queryParams = append(queryParams, arg.UserID)
-	queryParams = append(queryParams, arg.UserID2)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
 	if len(arg.Ids) > 0 {
 		for _, v := range arg.Ids {
 			queryParams = append(queryParams, v)
@@ -342,13 +377,12 @@ const getContactsList = `-- name: GetContactsList :many
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at
 FROM contacts
-WHERE id IN (/*SLICE:contact_ids*/?) AND (user_id = ? OR user_id = ?3) AND deleted_at IS NULL
+WHERE id IN (/*SLICE:contact_ids*/?) AND user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
 `
 
 type GetContactsListParams struct {
-	ContactIds []int64       `json:"contact_ids"`
-	UserID     int64         `json:"user_id"`
-	UserID2    sql.NullInt64 `json:"user_id_2"`
+	ContactIds []int64 `json:"contact_ids"`
+	UsersID    []int64 `json:"users_id"`
 }
 
 func (q *Queries) GetContactsList(ctx context.Context, arg GetContactsListParams) ([]Contact, error) {
@@ -362,8 +396,14 @@ func (q *Queries) GetContactsList(ctx context.Context, arg GetContactsListParams
 	} else {
 		query = strings.Replace(query, "/*SLICE:contact_ids*/?", "NULL", 1)
 	}
-	queryParams = append(queryParams, arg.UserID)
-	queryParams = append(queryParams, arg.UserID2)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
 	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
@@ -421,22 +461,27 @@ SELECT
   contact_embeddings.embedding
 FROM contacts
 RIGHT JOIN contact_embeddings ON contact_embeddings.contact_id = contacts.id
-WHERE (user_id = ? OR user_id = ?2) AND deleted_at IS NULL
+WHERE user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
 ORDER BY contacts.id DESC
 `
-
-type GetContactsWithEmbeddingsParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
 
 type GetContactsWithEmbeddingsRow struct {
 	ID        sql.NullInt64 `json:"id"`
 	Embedding string        `json:"embedding"`
 }
 
-func (q *Queries) GetContactsWithEmbeddings(ctx context.Context, arg GetContactsWithEmbeddingsParams) ([]GetContactsWithEmbeddingsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getContactsWithEmbeddings, arg.UserID, arg.UserID2)
+func (q *Queries) GetContactsWithEmbeddings(ctx context.Context, usersID []int64) ([]GetContactsWithEmbeddingsRow, error) {
+	query := getContactsWithEmbeddings
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}

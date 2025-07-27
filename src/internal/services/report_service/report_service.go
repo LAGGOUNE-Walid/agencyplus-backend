@@ -17,7 +17,15 @@ func (s *ReportService) Create(req requests.CreateReportRequest, ctx context.Con
 		Content: req.Content,
 	})
 }
-func (s *ReportService) Update(req requests.UpdateReportRequest, ctx context.Context) error {
+func (s *ReportService) Update(req requests.UpdateReportRequest, ctx context.Context, rootId *int64, agencyUsers []int64) error {
+	if rootId == nil {
+		return s.Queries.UpdateReportByMaster(ctx, db.UpdateReportByMasterParams{
+			ID:      req.ID,
+			UsersID: agencyUsers,
+			Title:   req.Title,
+			Content: req.Content,
+		})
+	}
 	return s.Queries.UpdateReport(ctx, db.UpdateReportParams{
 		ID:      req.ID,
 		UserID:  req.UserID,
@@ -26,13 +34,22 @@ func (s *ReportService) Update(req requests.UpdateReportRequest, ctx context.Con
 	})
 }
 
-func (s *ReportService) Delete(ctx context.Context, id int64, userId int64) error {
+func (s *ReportService) Delete(ctx context.Context, id int64, userId int64, rootId *int64, agencyUsers []int64) error {
+	if rootId == nil {
+		s.Queries.DeleteReportByMaster(ctx, db.DeleteReportByMasterParams{
+			ID:      id,
+			UsersID: agencyUsers,
+		})
+	}
 	return s.Queries.DeleteReport(ctx, db.DeleteReportParams{
 		ID:     id,
 		UserID: userId,
 	})
 }
 
-func (s *ReportService) All(ctx context.Context, userId int64) ([]db.Report, error) {
+func (s *ReportService) All(ctx context.Context, userId int64, rootId *int64, agencyUsers []int64) ([]db.Report, error) {
+	if rootId == nil {
+		return s.Queries.GetUserMasterReports(ctx, agencyUsers)
+	}
 	return s.Queries.GetUserReports(ctx, userId)
 }

@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"strings"
 )
 
 const createReport = `-- name: CreateReport :one
@@ -53,6 +54,76 @@ func (q *Queries) DeleteReport(ctx context.Context, arg DeleteReportParams) erro
 	return err
 }
 
+const deleteReportByMaster = `-- name: DeleteReportByMaster :exec
+UPDATE reports set deleted_at = CURRENT_TIMESTAMP where id = ? and user_id IN (/*SLICE:users_id*/?)
+`
+
+type DeleteReportByMasterParams struct {
+	ID      int64   `json:"id"`
+	UsersID []int64 `json:"users_id"`
+}
+
+func (q *Queries) DeleteReportByMaster(ctx context.Context, arg DeleteReportByMasterParams) error {
+	query := deleteReportByMaster
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
+const getUserMasterReports = `-- name: GetUserMasterReports :many
+SELECT id, user_id, title, content, created_at, updated_at, deleted_at from reports where user_id IN (/*SLICE:users_id*/?) and deleted_at is null ORDER BY id desc
+`
+
+func (q *Queries) GetUserMasterReports(ctx context.Context, usersID []int64) ([]Report, error) {
+	query := getUserMasterReports
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Report{}
+	for rows.Next() {
+		var i Report
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserReportById = `-- name: GetUserReportById :one
 SELECT id, user_id, title, content, created_at, updated_at, deleted_at from reports where user_id = ? and id = ?
 `
@@ -64,6 +135,41 @@ type GetUserReportByIdParams struct {
 
 func (q *Queries) GetUserReportById(ctx context.Context, arg GetUserReportByIdParams) (Report, error) {
 	row := q.db.QueryRowContext(ctx, getUserReportById, arg.UserID, arg.ID)
+	var i Report
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getUserReportForMasterById = `-- name: GetUserReportForMasterById :one
+SELECT id, user_id, title, content, created_at, updated_at, deleted_at from reports where user_id IN (/*SLICE:users_id*/?) and id = ?
+`
+
+type GetUserReportForMasterByIdParams struct {
+	UsersID []int64 `json:"users_id"`
+	ID      int64   `json:"id"`
+}
+
+func (q *Queries) GetUserReportForMasterById(ctx context.Context, arg GetUserReportForMasterByIdParams) (Report, error) {
+	query := getUserReportForMasterById
+	var queryParams []interface{}
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.ID)
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var i Report
 	err := row.Scan(
 		&i.ID,
@@ -134,5 +240,38 @@ func (q *Queries) UpdateReport(ctx context.Context, arg UpdateReportParams) erro
 		arg.ID,
 		arg.UserID,
 	)
+	return err
+}
+
+const updateReportByMaster = `-- name: UpdateReportByMaster :exec
+UPDATE reports SET
+title = ?,
+content = ?,
+updated_at = CURRENT_TIMESTAMP
+WHERE id = ? and user_id IN (/*SLICE:users_id*/?)
+`
+
+type UpdateReportByMasterParams struct {
+	Title   string  `json:"title"`
+	Content string  `json:"content"`
+	ID      int64   `json:"id"`
+	UsersID []int64 `json:"users_id"`
+}
+
+func (q *Queries) UpdateReportByMaster(ctx context.Context, arg UpdateReportByMasterParams) error {
+	query := updateReportByMaster
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.Title)
+	queryParams = append(queryParams, arg.Content)
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }

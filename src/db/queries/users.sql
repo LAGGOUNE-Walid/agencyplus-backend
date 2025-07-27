@@ -51,4 +51,7 @@ SELECT COUNT(*) FROM users
 WHERE email = ? AND id != ?;
 
 -- name: GetUserAgents :many
-SELECT * from users where root_id = ?
+SELECT * from users where root_id = ?;
+
+-- name: GetAgencyUsers :many
+SELECT * from users where root_id = ?;

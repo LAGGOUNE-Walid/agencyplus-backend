@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"logispro/internal/constants"
+	"logispro/internal/db"
 	"logispro/internal/services/building_service"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/utils"
@@ -76,7 +77,17 @@ func (c *BuildingController) GetBuildingsHandler(w http.ResponseWriter, r *http.
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	buildings, err := c.GetBuildingService.All(userId, rootId, offset, 20, r.Context())
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	buildings, err := c.GetBuildingService.All(agencyUsersId, offset, 20, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -111,7 +122,17 @@ func (c *BuildingController) GetBuildingHandler(w http.ResponseWriter, r *http.R
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	b, err := c.GetBuildingService.Get(userId, rootId, id, r.Context())
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	b, err := c.GetBuildingService.Get(agencyUsersId, id, r.Context())
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -198,7 +219,17 @@ func (c *BuildingController) DeleteBuildingHandler(w http.ResponseWriter, r *htt
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	err = c.UpdateBuildingService.Delete(ctx, userId, rootId, id)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.UpdateBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	err = c.UpdateBuildingService.Delete(ctx, agencyUsersId, id)
 	if err != nil {
 		return response_types.ApiResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -282,7 +313,17 @@ func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	err = c.UpdateBuildingService.DeleteImage(ctx, userId, rootId, buildingId, imageId)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	err = c.UpdateBuildingService.DeleteImage(ctx, agencyUsersId, buildingId, imageId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -367,7 +408,17 @@ func (c *BuildingController) DeleteBuildingDocumentHandler(w http.ResponseWriter
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	err = c.UpdateBuildingService.DeleteDocument(ctx, userId, rootId, buildingId, documentId)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	err = c.UpdateBuildingService.DeleteDocument(ctx, agencyUsersId, buildingId, documentId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -424,7 +475,17 @@ func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	statistics, err := c.GetBuildingsStatisticsService.Get(userId, rootId, ctx)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	statistics, err := c.GetBuildingsStatisticsService.Get(agencyUsersId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -459,7 +520,17 @@ func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *h
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	gain, err := c.GetBuildingsStatisticsService.GetBuildingsTotalChangeRate(userId, rootId, ctx)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	gain, err := c.GetBuildingsStatisticsService.GetBuildingsTotalChangeRate(agencyUsersId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -494,7 +565,17 @@ func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, 
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	dairas, err := c.GetBuildingsStatisticsService.GetBuildingsDairaDistribution(userId, rootId, ctx)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	dairas, err := c.GetBuildingsStatisticsService.GetBuildingsDairaDistribution(agencyUsersId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
@@ -529,7 +610,17 @@ func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Reques
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	location, err := c.GetBuildingsStatisticsService.GetBuildingsLocations(userId, rootId, ctx)
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	location, err := c.GetBuildingsStatisticsService.GetBuildingsLocations(agencyUsersId, ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{

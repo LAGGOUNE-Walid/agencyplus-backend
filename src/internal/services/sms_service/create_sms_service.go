@@ -15,15 +15,15 @@ type CreateSmsService struct {
 	RabbitMqConn *amqp.Connection
 }
 
-func (s *CreateSmsService) Create(req requests.CreateSmsRequest, userId int64, ctx context.Context) (sms db.SmsQueue, err error) {
+func (s *CreateSmsService) Create(req requests.CreateSmsRequest, userId int64, agencyUsers []int64, ctx context.Context) (sms db.SmsQueue, err error) {
 	user, err := s.Queries.GetUserById(ctx, userId)
 	if err != nil {
 		return sms, err
 	}
 
 	contacts, err := s.Queries.GetContactsById(ctx, db.GetContactsByIdParams{
-		UserID: userId,
-		Ids:    req.Contacts,
+		UsersID: agencyUsers,
+		Ids:     req.Contacts,
 	})
 
 	if len(contacts) == 0 {

@@ -3,6 +3,11 @@ FROM golang:1.24
 
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y poppler-utils && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy go.mod and go.sum and download dependencies
 COPY ./src/go.mod ./src/go.sum ./
 RUN go mod download

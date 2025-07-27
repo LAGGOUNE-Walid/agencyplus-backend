@@ -3,8 +3,10 @@ package sms
 import (
 	"fmt"
 	"logispro/internal/constants"
+	"logispro/internal/db"
 	"logispro/internal/services/sms_service"
 	"logispro/internal/shared/response_types"
+	"logispro/internal/utils"
 	"logispro/internal/web/requests"
 	"net/http"
 )
@@ -28,7 +30,24 @@ func (c *SmsController) CreateSmsHandler(w http.ResponseWriter, r *http.Request)
 			StatusCode: http.StatusBadRequest,
 		}
 	}
-	_, err := c.CreateSmsService.Create(req, userId, r.Context())
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.CreateSmsService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+		return u.ID
+	})
+	_, err = c.CreateSmsService.Create(req, userId, agencyUsersId, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
 			Content:    nil,

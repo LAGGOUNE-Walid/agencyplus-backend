@@ -12,33 +12,48 @@ import (
 )
 
 const countUserBuildings = `-- name: CountUserBuildings :one
-SELECT count(id) FROM buildings WHERE (user_id = ? OR user_id = ?2) and deleted_at IS NULL
+SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and deleted_at IS NULL
 `
 
-type CountUserBuildingsParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
-
-func (q *Queries) CountUserBuildings(ctx context.Context, arg CountUserBuildingsParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUserBuildings, arg.UserID, arg.UserID2)
+func (q *Queries) CountUserBuildings(ctx context.Context, usersID []int64) (int64, error) {
+	query := countUserBuildings
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const countUserBuildingsByStatus = `-- name: CountUserBuildingsByStatus :one
-SELECT count(id) FROM buildings WHERE (user_id = ? OR user_id = ?2) and status = ?3 and deleted_at IS NULL
+SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and status = ?2 and deleted_at IS NULL
 `
 
 type CountUserBuildingsByStatusParams struct {
-	UserID  int64          `json:"user_id"`
-	UserID2 sql.NullInt64  `json:"user_id_2"`
+	UsersID []int64        `json:"users_id"`
 	Status  sql.NullString `json:"status"`
 }
 
 func (q *Queries) CountUserBuildingsByStatus(ctx context.Context, arg CountUserBuildingsByStatusParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUserBuildingsByStatus, arg.UserID, arg.UserID2, arg.Status)
+	query := countUserBuildingsByStatus
+	var queryParams []interface{}
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.Status)
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -223,109 +238,161 @@ func (q *Queries) CreateBuildingVue(ctx context.Context, arg CreateBuildingVuePa
 
 const deleteBuilding = `-- name: DeleteBuilding :exec
 UPDATE buildings SET deleted_at = CURRENT_TIMESTAMP
-WHERE (user_id = ? OR user_id = ?3) AND id = ? AND deleted_at is NULL
+WHERE user_id IN (/*SLICE:users_id*/?) AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-	ID      int64         `json:"id"`
+	UsersID []int64 `json:"users_id"`
+	ID      int64   `json:"id"`
 }
 
 func (q *Queries) DeleteBuilding(ctx context.Context, arg DeleteBuildingParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuilding, arg.UserID, arg.UserID2, arg.ID)
+	query := deleteBuilding
+	var queryParams []interface{}
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.ID)
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
 const deleteBuildingDocument = `-- name: DeleteBuildingDocument :exec
 UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND (user_id = ? OR user_id = ?4) AND id = ? AND deleted_at is NULL
+WHERE building_id = ? AND user_id IN (/*SLICE:users_id*/?) AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingDocumentParams struct {
-	BuildingID int64         `json:"building_id"`
-	UserID     int64         `json:"user_id"`
-	UserID2    sql.NullInt64 `json:"user_id_2"`
-	ID         int64         `json:"id"`
+	BuildingID int64   `json:"building_id"`
+	UsersID    []int64 `json:"users_id"`
+	ID         int64   `json:"id"`
 }
 
 func (q *Queries) DeleteBuildingDocument(ctx context.Context, arg DeleteBuildingDocumentParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingDocument,
-		arg.BuildingID,
-		arg.UserID,
-		arg.UserID2,
-		arg.ID,
-	)
+	query := deleteBuildingDocument
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.BuildingID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.ID)
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
 const deleteBuildingDocuments = `-- name: DeleteBuildingDocuments :exec
 UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND (user_id = ? OR user_id = ?3) AND deleted_at is NULL
+WHERE building_id = ? AND user_id IN (/*SLICE:users_id*/?) AND deleted_at is NULL
 `
 
 type DeleteBuildingDocumentsParams struct {
-	BuildingID int64         `json:"building_id"`
-	UserID     int64         `json:"user_id"`
-	UserID2    sql.NullInt64 `json:"user_id_2"`
+	BuildingID int64   `json:"building_id"`
+	UsersID    []int64 `json:"users_id"`
 }
 
 func (q *Queries) DeleteBuildingDocuments(ctx context.Context, arg DeleteBuildingDocumentsParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingDocuments, arg.BuildingID, arg.UserID, arg.UserID2)
+	query := deleteBuildingDocuments
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.BuildingID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
 const deleteBuildingImage = `-- name: DeleteBuildingImage :exec
 UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND (user_id = ? OR user_id = ?4) AND id = ? AND deleted_at is NULL
+WHERE building_id = ? AND user_id IN (/*SLICE:users_id*/?) AND id = ? AND deleted_at is NULL
 `
 
 type DeleteBuildingImageParams struct {
-	BuildingID int64         `json:"building_id"`
-	UserID     int64         `json:"user_id"`
-	UserID2    sql.NullInt64 `json:"user_id_2"`
-	ID         int64         `json:"id"`
+	BuildingID int64   `json:"building_id"`
+	UsersID    []int64 `json:"users_id"`
+	ID         int64   `json:"id"`
 }
 
 func (q *Queries) DeleteBuildingImage(ctx context.Context, arg DeleteBuildingImageParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingImage,
-		arg.BuildingID,
-		arg.UserID,
-		arg.UserID2,
-		arg.ID,
-	)
+	query := deleteBuildingImage
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.BuildingID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.ID)
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
 const deleteBuildingImages = `-- name: DeleteBuildingImages :exec
 UPDATE building_images SET deleted_at = CURRENT_TIMESTAMP
-WHERE building_id = ? AND (user_id = ? OR user_id = ?3) AND deleted_at is NULL
+WHERE building_id = ? AND user_id IN (/*SLICE:users_id*/?) AND deleted_at is NULL
 `
 
 type DeleteBuildingImagesParams struct {
-	BuildingID int64         `json:"building_id"`
-	UserID     int64         `json:"user_id"`
-	UserID2    sql.NullInt64 `json:"user_id_2"`
+	BuildingID int64   `json:"building_id"`
+	UsersID    []int64 `json:"users_id"`
 }
 
 func (q *Queries) DeleteBuildingImages(ctx context.Context, arg DeleteBuildingImagesParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBuildingImages, arg.BuildingID, arg.UserID, arg.UserID2)
+	query := deleteBuildingImages
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.BuildingID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
 const getBuilding = `-- name: GetBuilding :one
 SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
-WHERE (user_id = ? OR user_id = ?3) AND id = ? AND deleted_at is NULL
+WHERE user_id IN (/*SLICE:users_id*/?) AND id = ? AND deleted_at is NULL
 `
 
 type GetBuildingParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-	ID      int64         `json:"id"`
+	UsersID []int64 `json:"users_id"`
+	ID      int64   `json:"id"`
 }
 
 func (q *Queries) GetBuilding(ctx context.Context, arg GetBuildingParams) (Building, error) {
-	row := q.db.QueryRowContext(ctx, getBuilding, arg.UserID, arg.UserID2, arg.ID)
+	query := getBuilding
+	var queryParams []interface{}
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.ID)
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var i Building
 	err := row.Scan(
 		&i.ID,
@@ -397,21 +464,26 @@ func (q *Queries) GetBuildingEmbeddings(ctx context.Context, buildingID int64) (
 }
 
 const getBuildingsDairas = `-- name: GetBuildingsDairas :many
-SELECT count(id), daira from buildings where (user_id = ? OR user_id = ?2) group by daira
+SELECT count(id), daira from buildings where user_id IN (/*SLICE:users_id*/?) group by daira
 `
-
-type GetBuildingsDairasParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
 
 type GetBuildingsDairasRow struct {
 	Count int64          `json:"count"`
 	Daira sql.NullString `json:"daira"`
 }
 
-func (q *Queries) GetBuildingsDairas(ctx context.Context, arg GetBuildingsDairasParams) ([]GetBuildingsDairasRow, error) {
-	rows, err := q.db.QueryContext(ctx, getBuildingsDairas, arg.UserID, arg.UserID2)
+func (q *Queries) GetBuildingsDairas(ctx context.Context, usersID []int64) ([]GetBuildingsDairasRow, error) {
+	query := getBuildingsDairas
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -434,13 +506,8 @@ func (q *Queries) GetBuildingsDairas(ctx context.Context, arg GetBuildingsDairas
 }
 
 const getBuildingsMap = `-- name: GetBuildingsMap :many
-SELECT id, title, location from buildings where (user_id = ? OR user_id = ?2)
+SELECT id, title, location from buildings where user_id IN (/*SLICE:users_id*/?)
 `
-
-type GetBuildingsMapParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
 
 type GetBuildingsMapRow struct {
 	ID       int64          `json:"id"`
@@ -448,8 +515,18 @@ type GetBuildingsMapRow struct {
 	Location sql.NullString `json:"location"`
 }
 
-func (q *Queries) GetBuildingsMap(ctx context.Context, arg GetBuildingsMapParams) ([]GetBuildingsMapRow, error) {
-	rows, err := q.db.QueryContext(ctx, getBuildingsMap, arg.UserID, arg.UserID2)
+func (q *Queries) GetBuildingsMap(ctx context.Context, usersID []int64) ([]GetBuildingsMapRow, error) {
+	query := getBuildingsMap
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -472,13 +549,8 @@ func (q *Queries) GetBuildingsMap(ctx context.Context, arg GetBuildingsMapParams
 }
 
 const getBuildingsTotalChangeRate = `-- name: GetBuildingsTotalChangeRate :one
-SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE (buildings.user_id = ? OR buildings.user_id = ?2)
+SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE buildings.user_id IN (/*SLICE:users_id*/?)
 `
-
-type GetBuildingsTotalChangeRateParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-}
 
 type GetBuildingsTotalChangeRateRow struct {
 	CurrentYearTotal sql.NullFloat64 `json:"current_year_total"`
@@ -486,11 +558,69 @@ type GetBuildingsTotalChangeRateRow struct {
 	PercentageChange interface{}     `json:"percentage_change"`
 }
 
-func (q *Queries) GetBuildingsTotalChangeRate(ctx context.Context, arg GetBuildingsTotalChangeRateParams) (GetBuildingsTotalChangeRateRow, error) {
-	row := q.db.QueryRowContext(ctx, getBuildingsTotalChangeRate, arg.UserID, arg.UserID2)
+func (q *Queries) GetBuildingsTotalChangeRate(ctx context.Context, usersID []int64) (GetBuildingsTotalChangeRateRow, error) {
+	query := getBuildingsTotalChangeRate
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var i GetBuildingsTotalChangeRateRow
 	err := row.Scan(&i.CurrentYearTotal, &i.LastYearTotal, &i.PercentageChange)
 	return i, err
+}
+
+const getBuildingsWithEmbeddings = `-- name: GetBuildingsWithEmbeddings :many
+SELECT
+  buildings.id,
+  building_embeddings.embedding
+FROM buildings
+RIGHT JOIN building_embeddings ON building_embeddings.building_id = buildings.id
+WHERE user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
+ORDER BY buildings.id DESC
+`
+
+type GetBuildingsWithEmbeddingsRow struct {
+	ID        sql.NullInt64 `json:"id"`
+	Embedding string        `json:"embedding"`
+}
+
+func (q *Queries) GetBuildingsWithEmbeddings(ctx context.Context, usersID []int64) ([]GetBuildingsWithEmbeddingsRow, error) {
+	query := getBuildingsWithEmbeddings
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetBuildingsWithEmbeddingsRow{}
+	for rows.Next() {
+		var i GetBuildingsWithEmbeddingsRow
+		if err := rows.Scan(&i.ID, &i.Embedding); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const insertEmbeddings = `-- name: InsertEmbeddings :exec
@@ -604,25 +734,31 @@ func (q *Queries) ListImagesForBuildingIDs(ctx context.Context, buildingIds []in
 
 const listPaginatedBuildings = `-- name: ListPaginatedBuildings :many
 SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
-WHERE (user_id = ? OR user_id = ?4) AND deleted_at IS NULL
+WHERE user_id IN (/*SLICE:users_id*/?) AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT ? OFFSET ?
 `
 
 type ListPaginatedBuildingsParams struct {
-	UserID  int64         `json:"user_id"`
-	UserID2 sql.NullInt64 `json:"user_id_2"`
-	Limit   int64         `json:"limit"`
-	Offset  int64         `json:"offset"`
+	UsersID []int64 `json:"users_id"`
+	Limit   int64   `json:"limit"`
+	Offset  int64   `json:"offset"`
 }
 
 func (q *Queries) ListPaginatedBuildings(ctx context.Context, arg ListPaginatedBuildingsParams) ([]Building, error) {
-	rows, err := q.db.QueryContext(ctx, listPaginatedBuildings,
-		arg.UserID,
-		arg.UserID2,
-		arg.Limit,
-		arg.Offset,
-	)
+	query := listPaginatedBuildings
+	var queryParams []interface{}
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.Limit)
+	queryParams = append(queryParams, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}

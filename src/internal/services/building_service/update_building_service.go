@@ -16,7 +16,7 @@ type UpdateBuildingService struct {
 	DB      *sql.DB
 }
 
-func (s *UpdateBuildingService) Delete(ctx context.Context, userId int64, rootId *int64, buildingId int64) error {
+func (s *UpdateBuildingService) Delete(ctx context.Context, agencyUsers []int64, buildingId int64) error {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return err
@@ -24,31 +24,22 @@ func (s *UpdateBuildingService) Delete(ctx context.Context, userId int64, rootId
 	defer tx.Rollback()
 	qtx := s.Queries.WithTx(tx)
 	var params1 db.DeleteBuildingParams
-	params1.UserID = userId
+	params1.UsersID = agencyUsers
 	params1.ID = buildingId
-	if rootId != nil {
-		params1.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
-	}
 	err = qtx.DeleteBuilding(ctx, params1)
 	if err != nil {
 		return err
 	}
 	var params2 db.DeleteBuildingImagesParams
-	params2.UserID = userId
+	params2.UsersID = agencyUsers
 	params2.BuildingID = buildingId
-	if rootId != nil {
-		params2.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
-	}
 	err = qtx.DeleteBuildingImages(ctx, params2)
 	if err != nil {
 		return err
 	}
 	var params3 db.DeleteBuildingDocumentsParams
-	params3.UserID = userId
+	params3.UsersID = agencyUsers
 	params3.BuildingID = buildingId
-	if rootId != nil {
-		params3.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
-	}
 	err = qtx.DeleteBuildingDocuments(ctx, params3)
 	if err != nil {
 		return err
@@ -126,14 +117,11 @@ func (s *UpdateBuildingService) AddImages(ctx context.Context, req requests.Upda
 	return nil
 }
 
-func (s *UpdateBuildingService) DeleteImage(ctx context.Context, userId int64, rootId *int64, buildingId int64, imageId int64) error {
+func (s *UpdateBuildingService) DeleteImage(ctx context.Context, agencyUsers []int64, buildingId int64, imageId int64) error {
 	params := db.DeleteBuildingImageParams{
 		BuildingID: buildingId,
-		UserID:     userId,
+		UsersID:    agencyUsers,
 		ID:         imageId,
-	}
-	if rootId != nil {
-		params.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
 	}
 	return s.Queries.DeleteBuildingImage(ctx, params)
 }
@@ -149,10 +137,10 @@ func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.U
 			return err
 		}
 
-		thumbPath := fmt.Sprintf("%s.png", sourceAbsPath)
+		thumbPath := fmt.Sprintf("%s-thumb", sourceAbsPath)
 		err = utils.GeneratePDFThumbnail(sourceAbsPath, thumbPath)
 		if err != nil {
-			return fmt.Errorf("failed to generate thumbnail: %w", err)
+			return fmt.Errorf("failed to generate thumbnail of file %s : %w", sourceAbsPath, err)
 		}
 		err = s.Queries.CreateBuildingDocument(ctx, db.CreateBuildingDocumentParams{
 			UserID:     req.UserID,
@@ -160,7 +148,7 @@ func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.U
 			Path:       docPath,
 			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
 			Size:       sql.NullInt64{Int64: header.Size, Valid: true},
-			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s.png", docPath), Valid: true},
+			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s-thumb-1.png", docPath), Valid: true},
 		})
 		if err != nil {
 			return err
@@ -169,14 +157,11 @@ func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.U
 	return nil
 }
 
-func (s *UpdateBuildingService) DeleteDocument(ctx context.Context, userId int64, rootId *int64, buildingId int64, documentId int64) error {
+func (s *UpdateBuildingService) DeleteDocument(ctx context.Context, agencyUsers []int64, buildingId int64, documentId int64) error {
 	params := db.DeleteBuildingDocumentParams{
 		BuildingID: buildingId,
-		UserID:     userId,
+		UsersID:    agencyUsers,
 		ID:         documentId,
-	}
-	if rootId != nil {
-		params.UserID2 = sql.NullInt64{Int64: *rootId, Valid: true}
 	}
 	return s.Queries.DeleteBuildingDocument(ctx, params)
 }

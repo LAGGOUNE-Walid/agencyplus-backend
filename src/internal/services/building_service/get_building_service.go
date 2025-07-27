@@ -2,7 +2,6 @@ package building_service
 
 import (
 	"context"
-	"database/sql"
 	"logispro/internal/db"
 )
 
@@ -14,28 +13,37 @@ type FullBuilding struct {
 	Images    []db.BuildingImage    `json:"images"`
 	Documents []db.BuildingDocument `json:"documents"`
 }
+type PaginatedBuildingsResponse struct {
+	Data    []FullBuilding `json:"data"`
+	HasMore bool           `json:"has_more"`
+}
 
-func (s *GetBuildingService) All(userId int64, rootId *int64, offset int64, limit int64, ctx context.Context) ([]FullBuilding, error) {
-	var full []FullBuilding
+func (s *GetBuildingService) All(agencyUsers []int64, offset int64, limit int64, ctx context.Context) (*PaginatedBuildingsResponse, error) {
 	var params db.ListPaginatedBuildingsParams
-	params.UserID = userId
+	params.UsersID = agencyUsers
 	params.Offset = offset
-	params.Limit = limit
-	if rootId != nil {
-		params.UserID2 = sql.NullInt64{Valid: true, Int64: *rootId}
-	}
+	params.Limit = limit + 1 // fetch one extra to check hasMore
+
 	buildings, err := s.Queries.ListPaginatedBuildings(ctx, params)
 	if err != nil {
 		return nil, err
 	}
+
+	hasMore := len(buildings) > int(limit)
+	if hasMore {
+		buildings = buildings[:limit] // trim to actual limit
+	}
+
 	ids := make([]int64, len(buildings))
 	for i, b := range buildings {
 		ids[i] = b.ID
 	}
+
 	images, err := s.Queries.ListImagesForBuildingIDs(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
+
 	docs, err := s.Queries.ListDocumentsForBuildingIDs(ctx, ids)
 	if err != nil {
 		return nil, err
@@ -51,8 +59,7 @@ func (s *GetBuildingService) All(userId int64, rootId *int64, offset int64, limi
 		docMap[doc.BuildingID] = append(docMap[doc.BuildingID], doc)
 	}
 
-	// Assemble final result
-
+	var full []FullBuilding
 	for _, b := range buildings {
 		full = append(full, FullBuilding{
 			Building:  b,
@@ -61,17 +68,17 @@ func (s *GetBuildingService) All(userId int64, rootId *int64, offset int64, limi
 		})
 	}
 
-	return full, nil
+	return &PaginatedBuildingsResponse{
+		Data:    full,
+		HasMore: hasMore,
+	}, nil
 }
 
-func (s *GetBuildingService) Get(userId int64, rootId *int64, id int64, ctx context.Context) (FullBuilding, error) {
+func (s *GetBuildingService) Get(agencyUsers []int64, id int64, ctx context.Context) (FullBuilding, error) {
 	var full FullBuilding
 	var params db.GetBuildingParams
 	params.ID = id
-	params.UserID = userId
-	if rootId != nil {
-		params.UserID = userId
-	}
+	params.UsersID = agencyUsers
 	b, err := s.Queries.GetBuilding(ctx, params)
 	if err != nil {
 		return full, err

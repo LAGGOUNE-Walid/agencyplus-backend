@@ -128,7 +128,7 @@ func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateB
 			return 0, err
 		}
 
-		thumbPath := fmt.Sprintf("%s.png", sourceAbsPath)
+		thumbPath := fmt.Sprintf("%s-thumb.png", sourceAbsPath)
 		err = utils.GeneratePDFThumbnail(sourceAbsPath, thumbPath)
 		if err != nil {
 			return 0, fmt.Errorf("failed to generate thumbnail: %w", err)
@@ -141,7 +141,7 @@ func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateB
 			Path:       docPath,
 			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
 			Size:       sql.NullInt64{Int64: header.Size, Valid: true},
-			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s.png", docPath), Valid: true},
+			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s-thumb-1.png", docPath), Valid: true},
 		})
 		if err != nil {
 			return 0, err
