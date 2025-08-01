@@ -11,6 +11,17 @@ import (
 	"strings"
 )
 
+const countBuildingVues = `-- name: CountBuildingVues :one
+SELECT COUNT(id) FROM building_vues WHERE building_id = ?
+`
+
+func (q *Queries) CountBuildingVues(ctx context.Context, buildingID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countBuildingVues, buildingID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countUserBuildings = `-- name: CountUserBuildings :one
 SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and deleted_at IS NULL
 `

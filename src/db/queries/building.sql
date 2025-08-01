@@ -110,6 +110,9 @@ WHERE (id = ? OR user_id = sqlc.narg(user_id_2)) AND user_id = ? AND deleted_at 
 INSERT INTO building_vues(building_id, ip_address, user_agent)
 VALUES(?, ?, ?);
 
+-- name: CountBuildingVues :one
+SELECT COUNT(id) FROM building_vues WHERE building_id = ?; 
+
 -- name: InsertEmbeddings :exec
 INSERT INTO building_embeddings(building_id, embedding, created_at) VALUES (?, ?, CURRENT_TIMESTAMP);
 

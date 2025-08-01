@@ -14,7 +14,12 @@ func ValidateCreateBuildingDocumentsRequest(r *http.Request) (ValidationErrors, 
 		fileErrs        = make(chan fieldError, 20)
 		validDocHeaders []*multipart.FileHeader
 	)
-	// Validate documents[]
+
+	if r.MultipartForm == nil {
+		errs.Add("documents", "requis")
+		return errs, nil, nil
+	}
+
 	if docs, ok := r.MultipartForm.File["documents"]; ok {
 		if len(docs) > constants.MaxBuildingDocuments {
 			errs.Add("documents[]", "max 50 fichiers")

@@ -337,6 +337,7 @@ func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r
 }
 
 func (c *BuildingController) CreateBuildingDocumentsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {

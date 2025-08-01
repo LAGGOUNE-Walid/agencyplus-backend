@@ -35,7 +35,10 @@ func ValidateCreateBuildingRequest(
 		validImageHeaders []*multipart.FileHeader
 		validDocHeaders   []*multipart.FileHeader
 	)
-
+	if r.MultipartForm == nil {
+		errs.Add("images", "requis")
+		return errs, nil, nil, nil
+	}
 	// Validate images[]
 	if images, ok := r.MultipartForm.File["images"]; ok {
 
@@ -59,7 +62,10 @@ func ValidateCreateBuildingRequest(
 			}
 		}
 	}
-
+	if r.MultipartForm == nil {
+		errs.Add("documents", "requis")
+		return errs, nil, nil, nil
+	}
 	// Validate documents[]
 	if docs, ok := r.MultipartForm.File["documents"]; ok {
 		if len(docs) > constants.MaxBuildingDocuments {

@@ -15,7 +15,10 @@ func ValidateCreateBuildingImagesRequest(r *http.Request) (ValidationErrors, []*
 		fileErrs          = make(chan fieldError, 20)
 		validImageHeaders []*multipart.FileHeader
 	)
-
+	if r.MultipartForm == nil {
+		errs.Add("images", "requis")
+		return errs, nil, nil
+	}
 	// Validate images[]
 	if images, ok := r.MultipartForm.File["images"]; ok {
 

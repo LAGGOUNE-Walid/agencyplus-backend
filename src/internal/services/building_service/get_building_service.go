@@ -12,6 +12,7 @@ type FullBuilding struct {
 	Building  db.Building           `json:"building"`
 	Images    []db.BuildingImage    `json:"images"`
 	Documents []db.BuildingDocument `json:"documents"`
+	VuesCount int64                 `json:"vues_count"`
 }
 type PaginatedBuildingsResponse struct {
 	Data    []FullBuilding `json:"data"`
@@ -94,8 +95,13 @@ func (s *GetBuildingService) Get(agencyUsers []int64, id int64, ctx context.Cont
 	if err != nil {
 		return full, err
 	}
+	vuesCount, err := s.Queries.CountBuildingVues(ctx, b.ID)
+	if err != nil {
+		return full, err
+	}
 	full.Building = b
 	full.Documents = docs
 	full.Images = images
+	full.VuesCount = vuesCount
 	return full, nil
 }
