@@ -153,6 +153,7 @@ func (s *Server) Run() {
 	mux.Handle("DELETE /building/{id}/documents/{documentId}", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.DeleteBuildingDocumentHandler)))
 	mux.Handle("POST /building-vue/{id}", s.makeHttpHandler(s.Controller.BuildingController.AddVueHandler))
 	mux.Handle("POST /sms", AuthMiddleware(s.makeHttpHandler(s.Controller.SmsController.CreateSmsHandler)))
+	mux.Handle("GET /agency-users", AuthMiddleware(s.makeHttpHandler(s.Controller.UserController.GetAgencyUsers)))
 	mux.Handle("POST /task", AuthMiddleware(s.makeHttpHandler(s.Controller.TaskController.CreateTaskHandler)))
 	mux.Handle("GET /tasks", AuthMiddleware(s.makeHttpHandler(s.Controller.TaskController.GetTasksHandler)))
 	mux.Handle("PATCH /task/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.TaskController.UpdateTaskHandler)))

@@ -44,7 +44,7 @@ func (c *SmsController) CreateSmsHandler(w http.ResponseWriter, r *http.Request)
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	_, err = c.CreateSmsService.Create(req, userId, agencyUsersId, r.Context())

@@ -48,16 +48,16 @@ func (s *UpdateBuildingService) Delete(ctx context.Context, agencyUsers []int64,
 	return tx.Commit()
 }
 
-func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, req requests.UpdateBuildingRequest, buildingId int64) error {
+func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, agencyUsers []int64, req requests.UpdateBuildingRequest, buildingId int64) error {
 	return s.Queries.UpdateBuilding(ctx, db.UpdateBuildingParams{
 		Title:                      sql.NullString{String: req.Title, Valid: req.Title != ""},
+		Status:                     sql.NullString{String: req.Status, Valid: req.Status != ""},
 		Location:                   sql.NullString{String: req.Location, Valid: req.Location != ""},
 		Wilaya:                     sql.NullString{String: req.Wilaya, Valid: req.Wilaya != ""},
 		Daira:                      sql.NullString{String: req.Daira, Valid: req.Daira != ""},
 		BuildingType:               sql.NullString{String: req.BuildingType, Valid: req.BuildingType != ""},
 		IsPromotionBuilding:        sql.NullBool{Bool: req.IsPromotionBuilding, Valid: true}, // adjust validation if needed
 		IsResidency:                sql.NullBool{Bool: req.IsResidency, Valid: true},
-		Status:                     sql.NullString{String: req.Status, Valid: req.Status != ""},
 		Price:                      sql.NullInt64{Int64: req.Price, Valid: req.Price != 0},
 		SurfaceTotal:               sql.NullFloat64{Float64: req.SurfaceTotal, Valid: req.SurfaceTotal != 0},
 		SurfaceBuilt:               sql.NullFloat64{Float64: req.SurfaceBuilt, Valid: req.SurfaceBuilt != 0},
@@ -93,7 +93,7 @@ func (s *UpdateBuildingService) UpdateBasicInfo(ctx context.Context, req request
 		YearBuilt:                  sql.NullInt64{Int64: req.YearBuilt, Valid: req.YearBuilt != 0},
 		Description:                sql.NullString{String: req.Description, Valid: req.Description != ""},
 		ID:                         buildingId,
-		UserID:                     req.UserID,
+		UsersID:                    agencyUsers,
 	})
 }
 

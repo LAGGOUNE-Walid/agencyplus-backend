@@ -27,21 +27,21 @@ func GetRootIdFromContext(ctx context.Context) (rootId *int64, err error) {
 	return rootId, nil
 }
 
-func GetAgencyUsers(ctx context.Context, c *db.Queries, userId int64, rootId *int64) (users []db.User, err error) {
+func GetAgencyUsers(ctx context.Context, c *db.Queries, userId int64, rootId *int64) (users []db.GetAgencyUsersRow, err error) {
 	if rootId == nil {
 		users, err = c.GetAgencyUsers(ctx, sql.NullInt64{Valid: true, Int64: userId})
 		user, err := c.GetUserById(ctx, userId)
 		if err != nil {
 			return users, err
 		}
-		users = append(users, user)
+		users = append(users, db.GetAgencyUsersRow(user))
 	} else {
 		users, err = c.GetAgencyUsers(ctx, sql.NullInt64{Valid: true, Int64: *rootId})
 		user, err := c.GetUserById(ctx, *rootId)
 		if err != nil {
 			return users, err
 		}
-		users = append(users, user)
+		users = append(users, db.GetAgencyUsersRow(user))
 	}
 
 	return users, err

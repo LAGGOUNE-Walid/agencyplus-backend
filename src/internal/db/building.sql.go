@@ -22,12 +22,12 @@ func (q *Queries) CountBuildingVues(ctx context.Context, buildingID int64) (int6
 	return count, err
 }
 
-const countUserBuildings = `-- name: CountUserBuildings :one
-SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and deleted_at IS NULL
+const countToSellUserBuildings = `-- name: CountToSellUserBuildings :one
+SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and buildings.status LIKE '%vendre%' and deleted_at IS NULL
 `
 
-func (q *Queries) CountUserBuildings(ctx context.Context, usersID []int64) (int64, error) {
-	query := countUserBuildings
+func (q *Queries) CountToSellUserBuildings(ctx context.Context, usersID []int64) (int64, error) {
+	query := countToSellUserBuildings
 	var queryParams []interface{}
 	if len(usersID) > 0 {
 		for _, v := range usersID {
@@ -43,27 +43,21 @@ func (q *Queries) CountUserBuildings(ctx context.Context, usersID []int64) (int6
 	return count, err
 }
 
-const countUserBuildingsByStatus = `-- name: CountUserBuildingsByStatus :one
-SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and status = ?2 and deleted_at IS NULL
+const countUserBuildings = `-- name: CountUserBuildings :one
+SELECT count(id) FROM buildings WHERE user_id IN (/*SLICE:users_id*/?) and deleted_at IS NULL
 `
 
-type CountUserBuildingsByStatusParams struct {
-	UsersID []int64        `json:"users_id"`
-	Status  sql.NullString `json:"status"`
-}
-
-func (q *Queries) CountUserBuildingsByStatus(ctx context.Context, arg CountUserBuildingsByStatusParams) (int64, error) {
-	query := countUserBuildingsByStatus
+func (q *Queries) CountUserBuildings(ctx context.Context, usersID []int64) (int64, error) {
+	query := countUserBuildings
 	var queryParams []interface{}
-	if len(arg.UsersID) > 0 {
-		for _, v := range arg.UsersID {
+	if len(usersID) > 0 {
+		for _, v := range usersID {
 			queryParams = append(queryParams, v)
 		}
-		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
 	} else {
 		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
 	}
-	queryParams = append(queryParams, arg.Status)
 	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var count int64
 	err := row.Scan(&count)
@@ -886,7 +880,7 @@ SET
   year_built = ?,
   description = ?,
   updated_at = CURRENT_TIMESTAMP
-WHERE (id = ? OR user_id = ?45) AND user_id = ? AND deleted_at is NULL
+WHERE id = ? AND user_id IN (/*SLICE:users_id*/?) AND deleted_at is NULL
 `
 
 type UpdateBuildingParams struct {
@@ -933,57 +927,63 @@ type UpdateBuildingParams struct {
 	YearBuilt                  sql.NullInt64   `json:"year_built"`
 	Description                sql.NullString  `json:"description"`
 	ID                         int64           `json:"id"`
-	UserID2                    sql.NullInt64   `json:"user_id_2"`
-	UserID                     int64           `json:"user_id"`
+	UsersID                    []int64         `json:"users_id"`
 }
 
 func (q *Queries) UpdateBuilding(ctx context.Context, arg UpdateBuildingParams) error {
-	_, err := q.db.ExecContext(ctx, updateBuilding,
-		arg.Title,
-		arg.Status,
-		arg.Location,
-		arg.Wilaya,
-		arg.Daira,
-		arg.BuildingType,
-		arg.IsPromotionBuilding,
-		arg.IsResidency,
-		arg.Price,
-		arg.SurfaceTotal,
-		arg.SurfaceBuilt,
-		arg.Rooms,
-		arg.Bathrooms,
-		arg.FloorsTotal,
-		arg.ParkingSpaces,
-		arg.IsByTheSea,
-		arg.HasWater,
-		arg.HasElectricity,
-		arg.HasGas,
-		arg.HasInternet,
-		arg.HasGarden,
-		arg.HasPool,
-		arg.HasElevator,
-		arg.HasCentralHeating,
-		arg.HasWaterTank,
-		arg.HasAirConditioner,
-		arg.HasEquippedKitchen,
-		arg.HasTerrace,
-		arg.HasNotarialDeed,
-		arg.HasLandBooklet,
-		arg.HasActInJointOwnership,
-		arg.HasCertificateOfConformity,
-		arg.HasDecision,
-		arg.HasConcession,
-		arg.HasStampedPaper,
-		arg.HasBuildingPermit,
-		arg.HasOffPlanSalesContract,
-		arg.BuildingFinishedType,
-		arg.AcceptablePaymentType,
-		arg.Furnished,
-		arg.YearBuilt,
-		arg.Description,
-		arg.ID,
-		arg.UserID2,
-		arg.UserID,
-	)
+	query := updateBuilding
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.Title)
+	queryParams = append(queryParams, arg.Status)
+	queryParams = append(queryParams, arg.Location)
+	queryParams = append(queryParams, arg.Wilaya)
+	queryParams = append(queryParams, arg.Daira)
+	queryParams = append(queryParams, arg.BuildingType)
+	queryParams = append(queryParams, arg.IsPromotionBuilding)
+	queryParams = append(queryParams, arg.IsResidency)
+	queryParams = append(queryParams, arg.Price)
+	queryParams = append(queryParams, arg.SurfaceTotal)
+	queryParams = append(queryParams, arg.SurfaceBuilt)
+	queryParams = append(queryParams, arg.Rooms)
+	queryParams = append(queryParams, arg.Bathrooms)
+	queryParams = append(queryParams, arg.FloorsTotal)
+	queryParams = append(queryParams, arg.ParkingSpaces)
+	queryParams = append(queryParams, arg.IsByTheSea)
+	queryParams = append(queryParams, arg.HasWater)
+	queryParams = append(queryParams, arg.HasElectricity)
+	queryParams = append(queryParams, arg.HasGas)
+	queryParams = append(queryParams, arg.HasInternet)
+	queryParams = append(queryParams, arg.HasGarden)
+	queryParams = append(queryParams, arg.HasPool)
+	queryParams = append(queryParams, arg.HasElevator)
+	queryParams = append(queryParams, arg.HasCentralHeating)
+	queryParams = append(queryParams, arg.HasWaterTank)
+	queryParams = append(queryParams, arg.HasAirConditioner)
+	queryParams = append(queryParams, arg.HasEquippedKitchen)
+	queryParams = append(queryParams, arg.HasTerrace)
+	queryParams = append(queryParams, arg.HasNotarialDeed)
+	queryParams = append(queryParams, arg.HasLandBooklet)
+	queryParams = append(queryParams, arg.HasActInJointOwnership)
+	queryParams = append(queryParams, arg.HasCertificateOfConformity)
+	queryParams = append(queryParams, arg.HasDecision)
+	queryParams = append(queryParams, arg.HasConcession)
+	queryParams = append(queryParams, arg.HasStampedPaper)
+	queryParams = append(queryParams, arg.HasBuildingPermit)
+	queryParams = append(queryParams, arg.HasOffPlanSalesContract)
+	queryParams = append(queryParams, arg.BuildingFinishedType)
+	queryParams = append(queryParams, arg.AcceptablePaymentType)
+	queryParams = append(queryParams, arg.Furnished)
+	queryParams = append(queryParams, arg.YearBuilt)
+	queryParams = append(queryParams, arg.Description)
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }

@@ -61,7 +61,7 @@ func (c *RecommenderController) GetForBuildingHandler(w http.ResponseWriter, r *
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	contacts, err := c.Queries.GetContactsWithEmbeddings(ctx, agencyUsersId)
@@ -127,7 +127,7 @@ func (c *RecommenderController) GetForContactsHandler(w http.ResponseWriter, r *
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 

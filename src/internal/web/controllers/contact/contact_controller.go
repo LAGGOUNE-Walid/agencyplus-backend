@@ -82,7 +82,7 @@ func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Re
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	contacts, err := c.GetContactService.All(agencyUsersId, rootId, r.Context())
@@ -120,7 +120,7 @@ func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	count, err := c.GetContactService.Count(agencyUsersId, r.Context())
@@ -171,7 +171,7 @@ func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *htt
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	contacts, err := c.GetContactService.FindAll(contactsIds, agencyUsersId, r.Context())
@@ -217,7 +217,7 @@ func (c *ContactController) GetContactHandler(w http.ResponseWriter, r *http.Req
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	contact, err := c.GetContactService.Get(id, agencyUsersId, r.Context())
@@ -273,7 +273,7 @@ func (c *ContactController) DeleteContactHandler(w http.ResponseWriter, r *http.
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	err = c.DeleteContactService.Delete(id, agencyUsersId, ctx)

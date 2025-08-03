@@ -43,7 +43,8 @@ SELECT COUNT(*) FROM users WHERE phone = ?;
 SELECT * FROM users WHERE email = ? AND deleted_at is NULL LIMIT 1;
 
 -- name: GetUserById :one
-SELECT * FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1;
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
+  agency_logo, wilaya, daira FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1;
 
 
 -- name: CountUsersByEmailExcludingID :one
@@ -51,7 +52,9 @@ SELECT COUNT(*) FROM users
 WHERE email = ? AND id != ?;
 
 -- name: GetUserAgents :many
-SELECT * from users where root_id = ?;
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
+  agency_logo, wilaya, daira from users where root_id = ?;
 
 -- name: GetAgencyUsers :many
-SELECT * from users where root_id = ?;
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
+  agency_logo, wilaya, daira from users where root_id = ?;

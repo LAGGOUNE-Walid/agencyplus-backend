@@ -7,10 +7,10 @@ INSERT INTO tasks (
 RETURNING *;
 
 -- name: GetCurrentUserTasks :many
-SELECT * from tasks where to_id = ?;
+SELECT * from tasks where to_id = ? ORDER BY ID DESC;
 
 -- name: GetRootUserCreatedTasks :many
-SELECT * from tasks where root_id = ? OR to_id = ?;
+SELECT * from tasks where root_id = ? OR to_id = ? ORDER BY ID DESC;
 
 -- name: MarkTaskAsDone :exec
 UPDATE tasks

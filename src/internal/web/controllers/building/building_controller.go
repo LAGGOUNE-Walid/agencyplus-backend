@@ -84,7 +84,7 @@ func (c *BuildingController) GetBuildingsHandler(w http.ResponseWriter, r *http.
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	buildings, err := c.GetBuildingService.All(agencyUsersId, offset, 20, r.Context())
@@ -129,7 +129,7 @@ func (c *BuildingController) GetBuildingHandler(w http.ResponseWriter, r *http.R
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	b, err := c.GetBuildingService.Get(agencyUsersId, id, r.Context())
@@ -181,8 +181,24 @@ func (c *BuildingController) UpdateBuildingHandler(w http.ResponseWriter, r *htt
 			StatusCode: http.StatusBadRequest,
 		}
 	}
-
-	err = c.UpdateBuildingService.UpdateBasicInfo(ctx, req, id)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.GetBuildingService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
+		return u.ID
+	})
+	err = c.UpdateBuildingService.UpdateBasicInfo(ctx, agencyUsersId, req, id)
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -226,7 +242,7 @@ func (c *BuildingController) DeleteBuildingHandler(w http.ResponseWriter, r *htt
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	err = c.UpdateBuildingService.Delete(ctx, agencyUsersId, id)
@@ -320,7 +336,7 @@ func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	err = c.UpdateBuildingService.DeleteImage(ctx, agencyUsersId, buildingId, imageId)
@@ -416,7 +432,7 @@ func (c *BuildingController) DeleteBuildingDocumentHandler(w http.ResponseWriter
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	err = c.UpdateBuildingService.DeleteDocument(ctx, agencyUsersId, buildingId, documentId)
@@ -483,7 +499,7 @@ func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	statistics, err := c.GetBuildingsStatisticsService.Get(agencyUsersId, ctx)
@@ -491,9 +507,10 @@ func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter
 		if errors.Is(err, sql.ErrNoRows) {
 			return response_types.ApiResponse{
 				Content:    nil,
-				StatusCode: http.StatusCreated,
+				StatusCode: http.StatusOK,
 			}
 		}
+
 		return response_types.ApiResponse{
 			Error:      err,
 			StatusCode: http.StatusInternalServerError,
@@ -528,7 +545,7 @@ func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *h
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	gain, err := c.GetBuildingsStatisticsService.GetBuildingsTotalChangeRate(agencyUsersId, ctx)
@@ -573,7 +590,7 @@ func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, 
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	dairas, err := c.GetBuildingsStatisticsService.GetBuildingsDairaDistribution(agencyUsersId, ctx)
@@ -618,7 +635,7 @@ func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Reques
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	location, err := c.GetBuildingsStatisticsService.GetBuildingsLocations(agencyUsersId, ctx)

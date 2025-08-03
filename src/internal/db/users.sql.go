@@ -89,18 +89,33 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 }
 
 const getAgencyUsers = `-- name: GetAgencyUsers :many
-SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at from users where root_id = ?
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
+  agency_logo, wilaya, daira from users where root_id = ?
 `
 
-func (q *Queries) GetAgencyUsers(ctx context.Context, rootID sql.NullInt64) ([]User, error) {
+type GetAgencyUsersRow struct {
+	ID            int64          `json:"id"`
+	Fullname      string         `json:"fullname"`
+	Role          int64          `json:"role"`
+	RootID        sql.NullInt64  `json:"root_id"`
+	Email         string         `json:"email"`
+	Phone         string         `json:"phone"`
+	AgencyName    string         `json:"agency_name"`
+	AgencyAddress string         `json:"agency_address"`
+	AgencyLogo    sql.NullString `json:"agency_logo"`
+	Wilaya        string         `json:"wilaya"`
+	Daira         string         `json:"daira"`
+}
+
+func (q *Queries) GetAgencyUsers(ctx context.Context, rootID sql.NullInt64) ([]GetAgencyUsersRow, error) {
 	rows, err := q.db.QueryContext(ctx, getAgencyUsers, rootID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []User{}
+	items := []GetAgencyUsersRow{}
 	for rows.Next() {
-		var i User
+		var i GetAgencyUsersRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Fullname,
@@ -113,10 +128,6 @@ func (q *Queries) GetAgencyUsers(ctx context.Context, rootID sql.NullInt64) ([]U
 			&i.AgencyLogo,
 			&i.Wilaya,
 			&i.Daira,
-			&i.Password,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -132,18 +143,33 @@ func (q *Queries) GetAgencyUsers(ctx context.Context, rootID sql.NullInt64) ([]U
 }
 
 const getUserAgents = `-- name: GetUserAgents :many
-SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at from users where root_id = ?
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
+  agency_logo, wilaya, daira from users where root_id = ?
 `
 
-func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]User, error) {
+type GetUserAgentsRow struct {
+	ID            int64          `json:"id"`
+	Fullname      string         `json:"fullname"`
+	Role          int64          `json:"role"`
+	RootID        sql.NullInt64  `json:"root_id"`
+	Email         string         `json:"email"`
+	Phone         string         `json:"phone"`
+	AgencyName    string         `json:"agency_name"`
+	AgencyAddress string         `json:"agency_address"`
+	AgencyLogo    sql.NullString `json:"agency_logo"`
+	Wilaya        string         `json:"wilaya"`
+	Daira         string         `json:"daira"`
+}
+
+func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]GetUserAgentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getUserAgents, rootID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []User{}
+	items := []GetUserAgentsRow{}
 	for rows.Next() {
-		var i User
+		var i GetUserAgentsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Fullname,
@@ -156,10 +182,6 @@ func (q *Queries) GetUserAgents(ctx context.Context, rootID sql.NullInt64) ([]Us
 			&i.AgencyLogo,
 			&i.Wilaya,
 			&i.Daira,
-			&i.Password,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -202,12 +224,27 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
+  agency_logo, wilaya, daira FROM users WHERE id = ? AND deleted_at is NULL LIMIT 1
 `
 
-func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
+type GetUserByIdRow struct {
+	ID            int64          `json:"id"`
+	Fullname      string         `json:"fullname"`
+	Role          int64          `json:"role"`
+	RootID        sql.NullInt64  `json:"root_id"`
+	Email         string         `json:"email"`
+	Phone         string         `json:"phone"`
+	AgencyName    string         `json:"agency_name"`
+	AgencyAddress string         `json:"agency_address"`
+	AgencyLogo    sql.NullString `json:"agency_logo"`
+	Wilaya        string         `json:"wilaya"`
+	Daira         string         `json:"daira"`
+}
+
+func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserById, id)
-	var i User
+	var i GetUserByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Fullname,
@@ -220,10 +257,6 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
 		&i.AgencyLogo,
 		&i.Wilaya,
 		&i.Daira,
-		&i.Password,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
 	)
 	return i, err
 }

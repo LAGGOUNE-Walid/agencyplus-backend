@@ -86,7 +86,7 @@ func (c *ReportController) UpdateReportHandler(w http.ResponseWriter, r *http.Re
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	err = c.ReportService.Update(req, r.Context(), rootId, agencyUsersId)
@@ -132,7 +132,7 @@ func (c *ReportController) DeleteReportHandler(w http.ResponseWriter, r *http.Re
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	err = c.ReportService.Delete(r.Context(), id, userId, rootId, agencyUsersId)
@@ -164,6 +164,23 @@ func (c *ReportController) GetReportsHandler(w http.ResponseWriter, r *http.Requ
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
+
+	if rootId != nil {
+		// get only reports of that user
+		reports, err := c.ReportService.All(r.Context(), userId, rootId, []int64{userId})
+		if err != nil {
+			return response_types.ApiResponse{
+				Content:    nil,
+				Error:      err,
+				StatusCode: http.StatusInternalServerError,
+			}
+		}
+		return response_types.ApiResponse{
+			StatusCode: http.StatusOK,
+			Content:    reports,
+		}
+	}
+	// get reports made by master and other agents
 	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.ReportService.Queries, userId, rootId)
 	if err != nil {
 		return response_types.ApiResponse{
@@ -171,7 +188,7 @@ func (c *ReportController) GetReportsHandler(w http.ResponseWriter, r *http.Requ
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.User) int64 {
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
 		return u.ID
 	})
 	reports, err := c.ReportService.All(r.Context(), userId, rootId, agencyUsersId)

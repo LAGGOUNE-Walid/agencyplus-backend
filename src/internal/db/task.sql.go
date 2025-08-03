@@ -52,7 +52,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 }
 
 const getCurrentUserTasks = `-- name: GetCurrentUserTasks :many
-SELECT id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at from tasks where to_id = ?
+SELECT id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at from tasks where to_id = ? ORDER BY ID DESC
 `
 
 func (q *Queries) GetCurrentUserTasks(ctx context.Context, toID int64) ([]Task, error) {
@@ -90,7 +90,7 @@ func (q *Queries) GetCurrentUserTasks(ctx context.Context, toID int64) ([]Task, 
 }
 
 const getRootUserCreatedTasks = `-- name: GetRootUserCreatedTasks :many
-SELECT id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at from tasks where root_id = ? OR to_id = ?
+SELECT id, to_id, root_id, title, content, is_completed, due_date, created_at, updated_at, deleted_at from tasks where root_id = ? OR to_id = ? ORDER BY ID DESC
 `
 
 type GetRootUserCreatedTasksParams struct {

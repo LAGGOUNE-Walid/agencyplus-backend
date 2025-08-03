@@ -1,11 +1,11 @@
 package task
 
 import (
-	"database/sql"
 	"fmt"
 	"logispro/internal/constants"
 	"logispro/internal/services/task_service"
 	"logispro/internal/shared/response_types"
+	"logispro/internal/utils"
 	"logispro/internal/web/requests"
 	"net/http"
 	"strconv"
@@ -32,8 +32,14 @@ func (c *TaskController) CreateTaskHandler(w http.ResponseWriter, r *http.Reques
 			StatusCode: http.StatusBadRequest,
 		}
 	}
-
-	userAgents, err := c.CreateTaskService.Queries.GetUserAgents(r.Context(), sql.NullInt64{Int64: userId, Valid: true})
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.CreateTaskService.Queries, userId, rootId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Content:    nil,
@@ -42,7 +48,7 @@ func (c *TaskController) CreateTaskHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	allowed := false
-	for _, agent := range userAgents {
+	for _, agent := range agencyUsers {
 		if agent.ID == req.To {
 			allowed = true
 		}
