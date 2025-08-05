@@ -182,7 +182,7 @@ VALUES (?, ?, ?, ?, ?, ?)
 
 type CreateBuildingDocumentParams struct {
 	UserID     int64          `json:"user_id"`
-	BuildingID int64          `json:"building_id"`
+	BuildingID sql.NullInt64  `json:"building_id"`
 	Path       string         `json:"path"`
 	Mimetype   sql.NullString `json:"mimetype"`
 	Size       sql.NullInt64  `json:"size"`
@@ -273,9 +273,9 @@ WHERE building_id = ? AND user_id IN (/*SLICE:users_id*/?) AND id = ? AND delete
 `
 
 type DeleteBuildingDocumentParams struct {
-	BuildingID int64   `json:"building_id"`
-	UsersID    []int64 `json:"users_id"`
-	ID         int64   `json:"id"`
+	BuildingID sql.NullInt64 `json:"building_id"`
+	UsersID    []int64       `json:"users_id"`
+	ID         int64         `json:"id"`
 }
 
 func (q *Queries) DeleteBuildingDocument(ctx context.Context, arg DeleteBuildingDocumentParams) error {
@@ -301,8 +301,8 @@ WHERE building_id = ? AND user_id IN (/*SLICE:users_id*/?) AND deleted_at is NUL
 `
 
 type DeleteBuildingDocumentsParams struct {
-	BuildingID int64   `json:"building_id"`
-	UsersID    []int64 `json:"users_id"`
+	BuildingID sql.NullInt64 `json:"building_id"`
+	UsersID    []int64       `json:"users_id"`
 }
 
 func (q *Queries) DeleteBuildingDocuments(ctx context.Context, arg DeleteBuildingDocumentsParams) error {
@@ -647,7 +647,7 @@ SELECT id, user_id, building_id, path, mimetype, size, thumbnail, created_at, de
 WHERE building_id IN (/*SLICE:building_ids*/?) AND deleted_at is NULL
 `
 
-func (q *Queries) ListDocumentsForBuildingIDs(ctx context.Context, buildingIds []int64) ([]BuildingDocument, error) {
+func (q *Queries) ListDocumentsForBuildingIDs(ctx context.Context, buildingIds []sql.NullInt64) ([]BuildingDocument, error) {
 	query := listDocumentsForBuildingIDs
 	var queryParams []interface{}
 	if len(buildingIds) > 0 {

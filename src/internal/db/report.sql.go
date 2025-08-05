@@ -149,7 +149,7 @@ func (q *Queries) GetUserReportById(ctx context.Context, arg GetUserReportByIdPa
 }
 
 const getUserReportForMasterById = `-- name: GetUserReportForMasterById :one
-SELECT id, user_id, title, content, created_at, updated_at, deleted_at from reports where user_id IN (/*SLICE:users_id*/?) and id = ?
+SELECT id, user_id, title, content, created_at, updated_at, deleted_at from reports where user_id IN (/*SLICE:users_id*/?) and id = ? ORDER BY id DESC
 `
 
 type GetUserReportForMasterByIdParams struct {

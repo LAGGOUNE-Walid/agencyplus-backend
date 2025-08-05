@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS building_documents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id BIGINT NOT NULL,
-    building_id BIGINT NOT NULL,
+    building_id BIGINT,
     path VARCHAR(255) NOT NULL,
     mimetype VARCHAR(100),
     size INT,

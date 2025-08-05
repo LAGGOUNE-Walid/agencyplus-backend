@@ -10,7 +10,7 @@ RETURNING *;
 SELECT * from reports where user_id = ? and id = ?;
 
 -- name: GetUserReportForMasterById :one
-SELECT * from reports where user_id IN (sqlc.slice('users_id')) and id = ?;
+SELECT * from reports where user_id IN (sqlc.slice('users_id')) and id = ? ORDER BY id DESC;
 
 -- name: UpdateReport :exec
 UPDATE reports SET

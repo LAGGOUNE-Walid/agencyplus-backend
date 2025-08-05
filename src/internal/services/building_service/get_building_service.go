@@ -2,6 +2,7 @@ package building_service
 
 import (
 	"context"
+	"database/sql"
 	"logispro/internal/db"
 )
 
@@ -44,8 +45,11 @@ func (s *GetBuildingService) All(agencyUsers []int64, offset int64, limit int64,
 	if err != nil {
 		return nil, err
 	}
-
-	docs, err := s.Queries.ListDocumentsForBuildingIDs(ctx, ids)
+	idsSql := make([]sql.NullInt64, len(buildings))
+	for i, b := range buildings {
+		idsSql[i] = sql.NullInt64{Valid: true, Int64: b.ID}
+	}
+	docs, err := s.Queries.ListDocumentsForBuildingIDs(ctx, idsSql)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +61,7 @@ func (s *GetBuildingService) All(agencyUsers []int64, offset int64, limit int64,
 
 	docMap := make(map[int64][]db.BuildingDocument)
 	for _, doc := range docs {
-		docMap[doc.BuildingID] = append(docMap[doc.BuildingID], doc)
+		docMap[doc.BuildingID.Int64] = append(docMap[doc.BuildingID.Int64], doc)
 	}
 
 	var full []FullBuilding
@@ -91,7 +95,10 @@ func (s *GetBuildingService) Get(agencyUsers []int64, id int64, ctx context.Cont
 	if err != nil {
 		return full, err
 	}
-	docs, err := s.Queries.ListDocumentsForBuildingIDs(ctx, ids)
+	idsSql := make([]sql.NullInt64, 1)
+	idsSql = append(idsSql, sql.NullInt64{Valid: true, Int64: b.ID})
+
+	docs, err := s.Queries.ListDocumentsForBuildingIDs(ctx, idsSql)
 	if err != nil {
 		return full, err
 	}

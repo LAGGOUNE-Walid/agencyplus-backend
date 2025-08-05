@@ -137,7 +137,7 @@ func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateB
 
 		err = qtx.CreateBuildingDocument(ctx, db.CreateBuildingDocumentParams{
 			UserID:     req.UserID,
-			BuildingID: lastID,
+			BuildingID: sql.NullInt64{Valid: true, Int64: lastID},
 			Path:       docPath,
 			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
 			Size:       sql.NullInt64{Int64: header.Size, Valid: true},

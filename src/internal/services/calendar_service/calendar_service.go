@@ -18,13 +18,12 @@ func (s *CalendarService) Create(ctx context.Context, req requests.CreateCalenda
 		ForDate: req.ForDate,
 	})
 }
-func (s *CalendarService) Update(ctx context.Context, req requests.CreateCalendarEventRequest) {}
-func (s *CalendarService) Delete(ctx context.Context, id int64, userId int64) error {
+func (s *CalendarService) Delete(ctx context.Context, id int64, agencyUsers []int64) error {
 	return s.Queries.DeleteCalendar(ctx, db.DeleteCalendarParams{
-		UserID: userId,
-		ID:     id,
+		UsersID: agencyUsers,
+		ID:      id,
 	})
 }
-func (s *CalendarService) All(ctx context.Context, userId int64) ([]db.CalendarEvent, error) {
-	return s.Queries.GetUserCalendars(ctx, userId)
+func (s *CalendarService) All(ctx context.Context, agencyUsers []int64) ([]db.CalendarEvent, error) {
+	return s.Queries.GetUserCalendars(ctx, agencyUsers)
 }

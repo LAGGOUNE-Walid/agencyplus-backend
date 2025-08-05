@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -48,25 +49,46 @@ func (q *Queries) CreateCalendar(ctx context.Context, arg CreateCalendarParams) 
 }
 
 const deleteCalendar = `-- name: DeleteCalendar :exec
-UPDATE calendar_events set deleted_at = CURRENT_TIMESTAMP where id = ? and user_id = ?
+UPDATE calendar_events set deleted_at = CURRENT_TIMESTAMP where id = ? and user_id IN (/*SLICE:users_id*/?)
 `
 
 type DeleteCalendarParams struct {
-	ID     int64 `json:"id"`
-	UserID int64 `json:"user_id"`
+	ID      int64   `json:"id"`
+	UsersID []int64 `json:"users_id"`
 }
 
 func (q *Queries) DeleteCalendar(ctx context.Context, arg DeleteCalendarParams) error {
-	_, err := q.db.ExecContext(ctx, deleteCalendar, arg.ID, arg.UserID)
+	query := deleteCalendar
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
 const getUserCalendars = `-- name: GetUserCalendars :many
-SELECT id, user_id, title, content, for_date, created_at, updated_at, deleted_at from calendar_events where user_id = ? and deleted_at is null
+SELECT id, user_id, title, content, for_date, created_at, updated_at, deleted_at from calendar_events where user_id IN (/*SLICE:users_id*/?) and deleted_at is null
 `
 
-func (q *Queries) GetUserCalendars(ctx context.Context, userID int64) ([]CalendarEvent, error) {
-	rows, err := q.db.QueryContext(ctx, getUserCalendars, userID)
+func (q *Queries) GetUserCalendars(ctx context.Context, usersID []int64) ([]CalendarEvent, error) {
+	query := getUserCalendars
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +125,7 @@ title = ?,
 content = ?,
 for_date = ?,
 updated_at = CURRENT_TIMESTAMP
-WHERE id = ? and user_id = ?
+WHERE id = ? and user_id IN (/*SLICE:users_id*/?)
 `
 
 type UpdateCalendarParams struct {
@@ -111,16 +133,24 @@ type UpdateCalendarParams struct {
 	Content string    `json:"content"`
 	ForDate time.Time `json:"for_date"`
 	ID      int64     `json:"id"`
-	UserID  int64     `json:"user_id"`
+	UsersID []int64   `json:"users_id"`
 }
 
 func (q *Queries) UpdateCalendar(ctx context.Context, arg UpdateCalendarParams) error {
-	_, err := q.db.ExecContext(ctx, updateCalendar,
-		arg.Title,
-		arg.Content,
-		arg.ForDate,
-		arg.ID,
-		arg.UserID,
-	)
+	query := updateCalendar
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.Title)
+	queryParams = append(queryParams, arg.Content)
+	queryParams = append(queryParams, arg.ForDate)
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }

@@ -12,10 +12,10 @@ title = ?,
 content = ?,
 for_date = ?,
 updated_at = CURRENT_TIMESTAMP
-WHERE id = ? and user_id = ?;
+WHERE id = ? and user_id IN (sqlc.slice('users_id'));
 
 -- name: DeleteCalendar :exec
-UPDATE calendar_events set deleted_at = CURRENT_TIMESTAMP where id = ? and user_id = ?;
+UPDATE calendar_events set deleted_at = CURRENT_TIMESTAMP where id = ? and user_id IN (sqlc.slice('users_id'));
 
 -- name: GetUserCalendars :many
-SELECT * from calendar_events where user_id = ? and deleted_at is null;
+SELECT * from calendar_events where user_id IN (sqlc.slice('users_id')) and deleted_at is null;

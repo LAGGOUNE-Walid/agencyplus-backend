@@ -3,8 +3,10 @@ package calendar
 import (
 	"fmt"
 	"logispro/internal/constants"
+	"logispro/internal/db"
 	"logispro/internal/services/calendar_service"
 	"logispro/internal/shared/response_types"
+	"logispro/internal/utils"
 	"logispro/internal/web/requests"
 	"net/http"
 	"strconv"
@@ -59,7 +61,24 @@ func (c *CalendarController) DeleteCalendarEventHandler(w http.ResponseWriter, r
 			Error:      fmt.Errorf("invalid building ID"),
 		}
 	}
-	err = c.CalendarService.Delete(r.Context(), id, userId)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.CalendarService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
+		return u.ID
+	})
+	err = c.CalendarService.Delete(r.Context(), id, agencyUsersId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Content:    nil,
@@ -81,7 +100,24 @@ func (c *CalendarController) GetCalendarEventsHandler(w http.ResponseWriter, r *
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	reports, err := c.CalendarService.All(r.Context(), userId)
+	rootId, err := utils.GetRootIdFromContext(r.Context())
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsers, err := utils.GetAgencyUsers(r.Context(), c.CalendarService.Queries, userId, rootId)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	agencyUsersId := utils.ExtractField(agencyUsers, func(u db.GetAgencyUsersRow) int64 {
+		return u.ID
+	})
+	reports, err := c.CalendarService.All(r.Context(), agencyUsersId)
 	if err != nil {
 		return response_types.ApiResponse{
 			Content:    nil,

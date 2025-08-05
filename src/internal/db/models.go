@@ -63,7 +63,7 @@ type Building struct {
 type BuildingDocument struct {
 	ID         int64          `json:"id"`
 	UserID     int64          `json:"user_id"`
-	BuildingID int64          `json:"building_id"`
+	BuildingID sql.NullInt64  `json:"building_id"`
 	Path       string         `json:"path"`
 	Mimetype   sql.NullString `json:"mimetype"`
 	Size       sql.NullInt64  `json:"size"`

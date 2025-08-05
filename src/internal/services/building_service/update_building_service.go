@@ -39,7 +39,7 @@ func (s *UpdateBuildingService) Delete(ctx context.Context, agencyUsers []int64,
 	}
 	var params3 db.DeleteBuildingDocumentsParams
 	params3.UsersID = agencyUsers
-	params3.BuildingID = buildingId
+	params3.BuildingID = sql.NullInt64{Valid: true, Int64: buildingId}
 	err = qtx.DeleteBuildingDocuments(ctx, params3)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.U
 		}
 		err = s.Queries.CreateBuildingDocument(ctx, db.CreateBuildingDocumentParams{
 			UserID:     req.UserID,
-			BuildingID: buildingId,
+			BuildingID: sql.NullInt64{Valid: true, Int64: buildingId},
 			Path:       docPath,
 			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
 			Size:       sql.NullInt64{Int64: header.Size, Valid: true},
@@ -159,7 +159,7 @@ func (s *UpdateBuildingService) AddDocuments(ctx context.Context, req requests.U
 
 func (s *UpdateBuildingService) DeleteDocument(ctx context.Context, agencyUsers []int64, buildingId int64, documentId int64) error {
 	params := db.DeleteBuildingDocumentParams{
-		BuildingID: buildingId,
+		BuildingID: sql.NullInt64{Valid: true, Int64: buildingId},
 		UsersID:    agencyUsers,
 		ID:         documentId,
 	}
