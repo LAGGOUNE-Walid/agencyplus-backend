@@ -21,7 +21,7 @@ type BuildingController struct {
 	GetBuildingsStatisticsService *building_service.GetBuildingsStatisticsService
 }
 
-func (c *BuildingController) CreateBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) CreateBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -59,7 +59,7 @@ func (c *BuildingController) CreateBuildingHandler(w http.ResponseWriter, r *htt
 	}
 }
 
-func (c *BuildingController) GetBuildingsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) GetBuildingsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -100,7 +100,7 @@ func (c *BuildingController) GetBuildingsHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-func (c *BuildingController) GetBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) GetBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -151,7 +151,7 @@ func (c *BuildingController) GetBuildingHandler(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (c *BuildingController) UpdateBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) UpdateBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -212,7 +212,7 @@ func (c *BuildingController) UpdateBuildingHandler(w http.ResponseWriter, r *htt
 	}
 }
 
-func (c *BuildingController) DeleteBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) DeleteBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -257,7 +257,7 @@ func (c *BuildingController) DeleteBuildingHandler(w http.ResponseWriter, r *htt
 	}
 }
 
-func (c *BuildingController) CreateBuildingImagesHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) CreateBuildingImagesHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -299,7 +299,7 @@ func (c *BuildingController) CreateBuildingImagesHandler(w http.ResponseWriter, 
 	}
 }
 
-func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -352,7 +352,7 @@ func (c *BuildingController) DeleteBuildingImageHandler(w http.ResponseWriter, r
 	}
 }
 
-func (c *BuildingController) CreateBuildingDocumentsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) CreateBuildingDocumentsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
@@ -395,7 +395,7 @@ func (c *BuildingController) CreateBuildingDocumentsHandler(w http.ResponseWrite
 	}
 }
 
-func (c *BuildingController) DeleteBuildingDocumentHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) DeleteBuildingDocumentHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -448,7 +448,7 @@ func (c *BuildingController) DeleteBuildingDocumentHandler(w http.ResponseWriter
 	}
 }
 
-func (c *BuildingController) AddVueHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) AddVueHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	buildingId, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		return response_types.ApiResponse{
@@ -476,7 +476,7 @@ func (c *BuildingController) AddVueHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -522,7 +522,7 @@ func (c *BuildingController) GetBuildingsStatisticsHandler(w http.ResponseWriter
 	}
 }
 
-func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -567,7 +567,7 @@ func (c *BuildingController) GetBuildingsGainHandler(w http.ResponseWriter, r *h
 	}
 }
 
-func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -612,7 +612,7 @@ func (c *BuildingController) GetDairaDistributionHandler(w http.ResponseWriter, 
 	}
 }
 
-func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -654,5 +654,28 @@ func (c *BuildingController) GetMapHandler(w http.ResponseWriter, r *http.Reques
 	return response_types.ApiResponse{
 		Content:    location,
 		StatusCode: http.StatusCreated,
+	}
+}
+
+func (c *BuildingController) GetSharedBuilding(w http.ResponseWriter, r *http.Request) response_types.Responder {
+	ctx := r.Context()
+	token := r.PathValue("token")
+	shareable, err := c.GetBuildingService.Queries.GetShareable(ctx, token)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	building, err := c.GetBuildingService.GetById(shareable.ModelID, ctx)
+	if err != nil {
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	return response_types.ApiResponse{
+		Content:    building,
+		StatusCode: http.StatusOK,
 	}
 }

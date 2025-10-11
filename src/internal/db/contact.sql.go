@@ -166,6 +166,15 @@ func (q *Queries) DeleteContact(ctx context.Context, arg DeleteContactParams) er
 	return err
 }
 
+const deleteContactEmbeddings = `-- name: DeleteContactEmbeddings :exec
+DELETE FROM contact_embeddings WHERE contact_id = ?
+`
+
+func (q *Queries) DeleteContactEmbeddings(ctx context.Context, contactID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteContactEmbeddings, contactID)
+	return err
+}
+
 const getAllContacts = `-- name: GetAllContacts :many
 SELECT
   id, user_id, fullname, phone, email, wilaya, daira, client_type, preferred_location_type, house_finishing, renting_floor_looking_for, is_married, preferred_building_types, preferred_features, min_rooms, max_rooms, min_budget, max_budget, min_surface, max_surface, furnished, acceptable_payment_type, max_year_built, purchase_urgency, comments, created_at, updated_at, deleted_at

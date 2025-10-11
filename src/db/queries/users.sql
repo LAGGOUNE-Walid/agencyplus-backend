@@ -58,3 +58,40 @@ SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
 -- name: GetAgencyUsers :many
 SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
   agency_logo, wilaya, daira from users where root_id = ?;
+
+-- name: GetUserSubscriptions :many
+SELECT * from user_subscriptions where user_id = ? ORDER BY id DESC;
+
+-- name: GetCurrentUserSubscription :one
+SELECT * FROM user_subscriptions where user_id = ? ORDER by id desc limit 1;
+
+-- name: CreateUsersubscription :exec
+INSERT INTO user_subscriptions (
+  user_id, plan_id, status, current_period_start, current_period_end, next_billing_date,
+  trial_start, trial_end, amount
+) VALUES (
+  ?, ?, ?, ?, ?, ?, ?, ?, ?
+);
+
+-- name: UpdateUserSubscription :exec
+UPDATE user_subscriptions 
+SET 
+    plan_id = ?,
+    status = ?,
+    current_period_start = ?,
+    current_period_end = ?,
+    next_billing_date = ?,
+    trial_start = ?,
+    trial_end = ?,
+    amount = ?,
+    updated_at = datetime('now')
+WHERE id = ?;
+
+-- name: GetUser :one
+SELECT * FROM users where id = ?;
+
+-- name: ForceDelete :exec
+DELETE FROM users where id = ?;
+
+-- name: UpdateAgencyUsersSubscriptionStatus :exec
+UPDATE user_subscriptions SET status = ? WHERE user_id IN(sqlc.slice('users_id'));

@@ -40,7 +40,12 @@ func (s *CreateUserService) Create(req requests.CreateUserRequest) (int64, strin
 		Wilaya:        req.Wilaya,
 		Daira:         req.Daira,
 		Password:      hashedPassword,
-		RootID:        sql.NullInt64{Int64: *req.RootId, Valid: req.RootId != nil},
+		RootID: func() sql.NullInt64 {
+			if req.RootId != nil {
+				return sql.NullInt64{Int64: *req.RootId, Valid: true}
+			}
+			return sql.NullInt64{Valid: false}
+		}(),
 	}
 	res, err := s.Queries.CreateUser(context.Background(), arg)
 	if err != nil {

@@ -16,7 +16,7 @@ type CalendarController struct {
 	CalendarService *calendar_service.CalendarService
 }
 
-func (c *CalendarController) CreateCalendarEventHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *CalendarController) CreateCalendarEventHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -46,7 +46,7 @@ func (c *CalendarController) CreateCalendarEventHandler(w http.ResponseWriter, r
 	}
 }
 
-func (c *CalendarController) DeleteCalendarEventHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *CalendarController) DeleteCalendarEventHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -92,7 +92,7 @@ func (c *CalendarController) DeleteCalendarEventHandler(w http.ResponseWriter, r
 	}
 }
 
-func (c *CalendarController) GetCalendarEventsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *CalendarController) GetCalendarEventsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{

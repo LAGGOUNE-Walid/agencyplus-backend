@@ -3,6 +3,7 @@ package building_service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"logispro/internal/db"
 )
 
@@ -10,10 +11,11 @@ type GetBuildingService struct {
 	Queries *db.Queries
 }
 type FullBuilding struct {
-	Building  db.Building           `json:"building"`
-	Images    []db.BuildingImage    `json:"images"`
-	Documents []db.BuildingDocument `json:"documents"`
-	VuesCount int64                 `json:"vues_count"`
+	Building   db.Building           `json:"building"`
+	Images     []db.BuildingImage    `json:"images"`
+	Documents  []db.BuildingDocument `json:"documents"`
+	SharedLink db.Shareable          `json:"shared_link"`
+	VuesCount  int64                 `json:"vues_count"`
 }
 type PaginatedBuildingsResponse struct {
 	Data    []FullBuilding `json:"data"`
@@ -103,12 +105,55 @@ func (s *GetBuildingService) Get(agencyUsers []int64, id int64, ctx context.Cont
 		return full, err
 	}
 	vuesCount, err := s.Queries.CountBuildingVues(ctx, b.ID)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return full, err
+	}
+
+	sharedLink, err := s.Queries.GetShareableByModelId(ctx, db.GetShareableByModelIdParams{ModelType: "building", ModelID: b.ID})
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return full, err
 	}
 	full.Building = b
 	full.Documents = docs
 	full.Images = images
 	full.VuesCount = vuesCount
+	full.SharedLink = sharedLink
+	return full, nil
+}
+
+func (s *GetBuildingService) GetById(id int64, ctx context.Context) (FullBuilding, error) {
+	var full FullBuilding
+	b, err := s.Queries.GetBuildingById(ctx, id)
+	if err != nil {
+		return full, err
+	}
+	ids := make([]int64, 1)
+	ids = append(ids, b.ID)
+
+	images, err := s.Queries.ListImagesForBuildingIDs(ctx, ids)
+	if err != nil {
+		return full, err
+	}
+	idsSql := make([]sql.NullInt64, 1)
+	idsSql = append(idsSql, sql.NullInt64{Valid: true, Int64: b.ID})
+
+	docs, err := s.Queries.ListDocumentsForBuildingIDs(ctx, idsSql)
+	if err != nil {
+		return full, err
+	}
+	vuesCount, err := s.Queries.CountBuildingVues(ctx, b.ID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return full, err
+	}
+
+	sharedLink, err := s.Queries.GetShareableByModelId(ctx, db.GetShareableByModelIdParams{ModelType: "building", ModelID: b.ID})
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return full, err
+	}
+	full.Building = b
+	full.Documents = docs
+	full.Images = images
+	full.VuesCount = vuesCount
+	full.SharedLink = sharedLink
 	return full, nil
 }

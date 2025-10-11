@@ -57,6 +57,8 @@ func ParseCreateUserRequest(r *http.Request, q *db.Queries, ctx context.Context)
 		} else {
 			return req, nil, err
 		}
+	} else {
+		req.RootId = nil
 	}
 
 	return req, validationErrors, nil

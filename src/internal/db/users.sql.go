@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"database/sql"
+	"strings"
+	"time"
 )
 
 const countUsersByEmail = `-- name: CountUsersByEmail :one
@@ -88,6 +90,51 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 	)
 }
 
+const createUsersubscription = `-- name: CreateUsersubscription :exec
+INSERT INTO user_subscriptions (
+  user_id, plan_id, status, current_period_start, current_period_end, next_billing_date,
+  trial_start, trial_end, amount
+) VALUES (
+  ?, ?, ?, ?, ?, ?, ?, ?, ?
+)
+`
+
+type CreateUsersubscriptionParams struct {
+	UserID             int64          `json:"user_id"`
+	PlanID             int64          `json:"plan_id"`
+	Status             sql.NullString `json:"status"`
+	CurrentPeriodStart time.Time      `json:"current_period_start"`
+	CurrentPeriodEnd   time.Time      `json:"current_period_end"`
+	NextBillingDate    sql.NullTime   `json:"next_billing_date"`
+	TrialStart         sql.NullTime   `json:"trial_start"`
+	TrialEnd           sql.NullTime   `json:"trial_end"`
+	Amount             float64        `json:"amount"`
+}
+
+func (q *Queries) CreateUsersubscription(ctx context.Context, arg CreateUsersubscriptionParams) error {
+	_, err := q.db.ExecContext(ctx, createUsersubscription,
+		arg.UserID,
+		arg.PlanID,
+		arg.Status,
+		arg.CurrentPeriodStart,
+		arg.CurrentPeriodEnd,
+		arg.NextBillingDate,
+		arg.TrialStart,
+		arg.TrialEnd,
+		arg.Amount,
+	)
+	return err
+}
+
+const forceDelete = `-- name: ForceDelete :exec
+DELETE FROM users where id = ?
+`
+
+func (q *Queries) ForceDelete(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, forceDelete, id)
+	return err
+}
+
 const getAgencyUsers = `-- name: GetAgencyUsers :many
 SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address,
   agency_logo, wilaya, daira from users where root_id = ?
@@ -140,6 +187,57 @@ func (q *Queries) GetAgencyUsers(ctx context.Context, rootID sql.NullInt64) ([]G
 		return nil, err
 	}
 	return items, nil
+}
+
+const getCurrentUserSubscription = `-- name: GetCurrentUserSubscription :one
+SELECT id, user_id, plan_id, status, current_period_start, current_period_end, next_billing_date, trial_start, trial_end, amount, created_at, updated_at FROM user_subscriptions where user_id = ? ORDER by id desc limit 1
+`
+
+func (q *Queries) GetCurrentUserSubscription(ctx context.Context, userID int64) (UserSubscription, error) {
+	row := q.db.QueryRowContext(ctx, getCurrentUserSubscription, userID)
+	var i UserSubscription
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.PlanID,
+		&i.Status,
+		&i.CurrentPeriodStart,
+		&i.CurrentPeriodEnd,
+		&i.NextBillingDate,
+		&i.TrialStart,
+		&i.TrialEnd,
+		&i.Amount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users where id = ?
+`
+
+func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Fullname,
+		&i.Role,
+		&i.RootID,
+		&i.Email,
+		&i.Phone,
+		&i.AgencyName,
+		&i.AgencyAddress,
+		&i.AgencyLogo,
+		&i.Wilaya,
+		&i.Daira,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const getUserAgents = `-- name: GetUserAgents :many
@@ -261,6 +359,71 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, er
 	return i, err
 }
 
+const getUserSubscriptions = `-- name: GetUserSubscriptions :many
+SELECT id, user_id, plan_id, status, current_period_start, current_period_end, next_billing_date, trial_start, trial_end, amount, created_at, updated_at from user_subscriptions where user_id = ? ORDER BY id DESC
+`
+
+func (q *Queries) GetUserSubscriptions(ctx context.Context, userID int64) ([]UserSubscription, error) {
+	rows, err := q.db.QueryContext(ctx, getUserSubscriptions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserSubscription{}
+	for rows.Next() {
+		var i UserSubscription
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.PlanID,
+			&i.Status,
+			&i.CurrentPeriodStart,
+			&i.CurrentPeriodEnd,
+			&i.NextBillingDate,
+			&i.TrialStart,
+			&i.TrialEnd,
+			&i.Amount,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateAgencyUsersSubscriptionStatus = `-- name: UpdateAgencyUsersSubscriptionStatus :exec
+UPDATE user_subscriptions SET status = ? WHERE user_id IN(/*SLICE:users_id*/?)
+`
+
+type UpdateAgencyUsersSubscriptionStatusParams struct {
+	Status  sql.NullString `json:"status"`
+	UsersID []int64        `json:"users_id"`
+}
+
+func (q *Queries) UpdateAgencyUsersSubscriptionStatus(ctx context.Context, arg UpdateAgencyUsersSubscriptionStatusParams) error {
+	query := updateAgencyUsersSubscriptionStatus
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.Status)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
 const updateLogo = `-- name: UpdateLogo :exec
 UPDATE users
 SET
@@ -331,6 +494,48 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.AgencyAddress,
 		arg.Wilaya,
 		arg.Daira,
+		arg.ID,
+	)
+	return err
+}
+
+const updateUserSubscription = `-- name: UpdateUserSubscription :exec
+UPDATE user_subscriptions 
+SET 
+    plan_id = ?,
+    status = ?,
+    current_period_start = ?,
+    current_period_end = ?,
+    next_billing_date = ?,
+    trial_start = ?,
+    trial_end = ?,
+    amount = ?,
+    updated_at = datetime('now')
+WHERE id = ?
+`
+
+type UpdateUserSubscriptionParams struct {
+	PlanID             int64          `json:"plan_id"`
+	Status             sql.NullString `json:"status"`
+	CurrentPeriodStart time.Time      `json:"current_period_start"`
+	CurrentPeriodEnd   time.Time      `json:"current_period_end"`
+	NextBillingDate    sql.NullTime   `json:"next_billing_date"`
+	TrialStart         sql.NullTime   `json:"trial_start"`
+	TrialEnd           sql.NullTime   `json:"trial_end"`
+	Amount             float64        `json:"amount"`
+	ID                 int64          `json:"id"`
+}
+
+func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubscriptionParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserSubscription,
+		arg.PlanID,
+		arg.Status,
+		arg.CurrentPeriodStart,
+		arg.CurrentPeriodEnd,
+		arg.NextBillingDate,
+		arg.TrialStart,
+		arg.TrialEnd,
+		arg.Amount,
 		arg.ID,
 	)
 	return err

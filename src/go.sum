@@ -1,3 +1,7 @@
+github.com/Chargily/chargily-pay-go v0.0.0-20241015090312-6c285907cb3f h1:6tJ7/yF3eLGFIaV73eajNGGEFa4d5zGbvqodwPWgLhU=
+github.com/Chargily/chargily-pay-go v0.0.0-20241015090312-6c285907cb3f/go.mod h1:9hYEIYniRU8M5Aeu2OU84m7TWuCACSdA+GtfBkTPXWA=
+github.com/Chargily/chargily-pay-go v0.0.0-20250916222351-fb0e552b2261 h1:J/N2eXVoIT6f1Iw/ELRJaAyuYntpqr7QvxXAKpm+u3Y=
+github.com/Chargily/chargily-pay-go v0.0.0-20250916222351-fb0e552b2261/go.mod h1:9hYEIYniRU8M5Aeu2OU84m7TWuCACSdA+GtfBkTPXWA=
 github.com/XSAM/otelsql v0.35.0 h1:nMdbU/XLmBIB6qZF61uDqy46E0LVA4ZgF/FCNw8Had4=
 github.com/XSAM/otelsql v0.35.0/go.mod h1:wO028mnLzmBpstK8XPsoeRLl/kgt417yjAwOGDIptTc=
 github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de h1:FxWPpzIjnTlhPwqqXc4/vE0f7GvRjuAsbW+HOIe8KnA=

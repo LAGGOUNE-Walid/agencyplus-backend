@@ -17,7 +17,7 @@ type TaskController struct {
 	UpdateTaskService *task_service.UpdateTaskService
 }
 
-func (c *TaskController) CreateTaskHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *TaskController) CreateTaskHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -73,7 +73,7 @@ func (c *TaskController) CreateTaskHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (c *TaskController) GetTasksHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *TaskController) GetTasksHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -104,7 +104,7 @@ func (c *TaskController) GetTasksHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (c *TaskController) UpdateTaskHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *TaskController) UpdateTaskHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {

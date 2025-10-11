@@ -73,6 +73,9 @@ ORDER BY id DESC;
 -- name: InsertContactEmbeddings :exec
 INSERT INTO contact_embeddings(contact_id, embedding, created_at) VALUES (?, ?, CURRENT_TIMESTAMP);
 
+-- name: DeleteContactEmbeddings :exec
+DELETE FROM contact_embeddings WHERE contact_id = ?;
+
 -- name: GetContactEmbeddings :one
 SELECT * FROM contact_embeddings where contact_id = ?;
 

@@ -19,7 +19,7 @@ type ContactController struct {
 	DeleteContactService *contact_service.DeleteContactService
 }
 
-func (c *ContactController) CreateContactHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ContactController) CreateContactHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	contactService := c.CreateContactService
 	req, validationErrors, err := requests.ParseCreateContactRequest(r, contactService.Queries, r.Context())
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *ContactController) CreateContactHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, err := utils.GetUserIdFromContext(r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
@@ -98,7 +98,7 @@ func (c *ContactController) GetContactsHandler(w http.ResponseWriter, r *http.Re
 		Content:    contacts,
 	}
 }
-func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, err := utils.GetUserIdFromContext(r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
@@ -137,7 +137,7 @@ func (c *ContactController) CountContactsHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, err := utils.GetUserIdFromContext(r.Context())
 	if err != nil {
 		return response_types.ApiResponse{
@@ -188,7 +188,7 @@ func (c *ContactController) GetContactsListHandler(w http.ResponseWriter, r *htt
 	}
 }
 
-func (c *ContactController) GetContactHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ContactController) GetContactHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		return response_types.ApiResponse{
@@ -241,7 +241,7 @@ func (c *ContactController) GetContactHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (c *ContactController) DeleteContactHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ContactController) DeleteContactHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {

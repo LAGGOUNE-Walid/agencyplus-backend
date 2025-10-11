@@ -77,6 +77,7 @@ func GeneratePDFThumbnail(pdfPath string, outputImagePath string) error {
 		"-f", "1",
 		"-l", "1",
 		"-png",
+		"-singlefile",
 		pdfPath,
 		outputImagePath,
 	)

@@ -15,7 +15,7 @@ type SmsController struct {
 	CreateSmsService *sms_service.CreateSmsService
 }
 
-func (c *SmsController) CreateSmsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *SmsController) CreateSmsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{

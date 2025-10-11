@@ -375,6 +375,41 @@ func (q *Queries) DeleteBuildingImages(ctx context.Context, arg DeleteBuildingIm
 	return err
 }
 
+const deleteEmbeddings = `-- name: DeleteEmbeddings :exec
+DELETE FROM building_embeddings WHERE building_id = ?
+`
+
+func (q *Queries) DeleteEmbeddings(ctx context.Context, buildingID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteEmbeddings, buildingID)
+	return err
+}
+
+const deleteUserDocument = `-- name: DeleteUserDocument :exec
+UPDATE building_documents SET deleted_at = CURRENT_TIMESTAMP
+WHERE user_id IN (/*SLICE:users_id*/?) AND id = ? AND deleted_at is NULL
+`
+
+type DeleteUserDocumentParams struct {
+	UsersID []int64 `json:"users_id"`
+	ID      int64   `json:"id"`
+}
+
+func (q *Queries) DeleteUserDocument(ctx context.Context, arg DeleteUserDocumentParams) error {
+	query := deleteUserDocument
+	var queryParams []interface{}
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.ID)
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
 const getBuilding = `-- name: GetBuilding :one
 SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
 WHERE user_id IN (/*SLICE:users_id*/?) AND id = ? AND deleted_at is NULL
@@ -398,6 +433,67 @@ func (q *Queries) GetBuilding(ctx context.Context, arg GetBuildingParams) (Build
 	}
 	queryParams = append(queryParams, arg.ID)
 	row := q.db.QueryRowContext(ctx, query, queryParams...)
+	var i Building
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Location,
+		&i.Title,
+		&i.Wilaya,
+		&i.Daira,
+		&i.BuildingType,
+		&i.IsPromotionBuilding,
+		&i.IsResidency,
+		&i.Status,
+		&i.Price,
+		&i.SurfaceTotal,
+		&i.SurfaceBuilt,
+		&i.Rooms,
+		&i.Bathrooms,
+		&i.FloorsTotal,
+		&i.ParkingSpaces,
+		&i.IsByTheSea,
+		&i.HasWater,
+		&i.HasElectricity,
+		&i.HasGas,
+		&i.HasInternet,
+		&i.HasGarden,
+		&i.HasPool,
+		&i.HasElevator,
+		&i.HasCentralHeating,
+		&i.HasWaterTank,
+		&i.HasAirConditioner,
+		&i.HasEquippedKitchen,
+		&i.HasTerrace,
+		&i.HasNotarialDeed,
+		&i.HasLandBooklet,
+		&i.HasActInJointOwnership,
+		&i.HasCertificateOfConformity,
+		&i.HasDecision,
+		&i.HasConcession,
+		&i.HasStampedPaper,
+		&i.HasBuildingPermit,
+		&i.HasOffPlanSalesContract,
+		&i.BuildingFinishedType,
+		&i.AcceptablePaymentType,
+		&i.Furnished,
+		&i.YearBuilt,
+		&i.Description,
+		&i.ShareableLink,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getBuildingById = `-- name: GetBuildingById :one
+SELECT id, user_id, location, title, wilaya, daira, building_type, is_promotion_building, is_residency, status, price, surface_total, surface_built, rooms, bathrooms, floors_total, parking_spaces, is_by_the_sea, has_water, has_electricity, has_gas, has_internet, has_garden, has_pool, has_elevator, has_central_heating, has_water_tank, has_air_conditioner, has_equipped_kitchen, has_terrace, has_notarial_deed, has_land_booklet, has_act_in_joint_ownership, has_certificate_of_conformity, has_decision, has_concession, has_stamped_paper, has_building_permit, has_off_plan_sales_contract, building_finished_type, acceptable_payment_type, furnished, year_built, description, shareable_link, created_at, updated_at, deleted_at FROM buildings
+WHERE id = ? AND deleted_at is NULL
+`
+
+func (q *Queries) GetBuildingById(ctx context.Context, id int64) (Building, error) {
+	row := q.db.QueryRowContext(ctx, getBuildingById, id)
 	var i Building
 	err := row.Scan(
 		&i.ID,
@@ -554,7 +650,7 @@ func (q *Queries) GetBuildingsMap(ctx context.Context, usersID []int64) ([]GetBu
 }
 
 const getBuildingsTotalChangeRate = `-- name: GetBuildingsTotalChangeRate :one
-SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE buildings.user_id IN (/*SLICE:users_id*/?)
+SELECT SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') AND status = 'Vendu' THEN price ELSE 0 END) AS current_year_total, SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') AND status = 'Vendu' THEN price ELSE 0 END) AS last_year_total, CASE WHEN SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') AND status = 'Vendu' THEN price ELSE 0 END) = 0 THEN NULL ELSE ROUND(((SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now') AND status = 'Vendu' THEN price ELSE 0 END) - SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') AND status = 'Vendu' THEN price ELSE 0 END)) * 100.0 / SUM(CASE WHEN strftime('%Y', created_at) = strftime('%Y', 'now', '-1 year') AND status = 'Vendu' THEN price ELSE 0 END)), 2) END AS percentage_change FROM buildings WHERE buildings.user_id IN (/*SLICE:users_id*/?)
 `
 
 type GetBuildingsTotalChangeRateRow struct {
@@ -615,6 +711,111 @@ func (q *Queries) GetBuildingsWithEmbeddings(ctx context.Context, usersID []int6
 	for rows.Next() {
 		var i GetBuildingsWithEmbeddingsRow
 		if err := rows.Scan(&i.ID, &i.Embedding); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDocumentById = `-- name: GetDocumentById :one
+SELECT id, user_id, building_id, path, mimetype, size, thumbnail, created_at, deleted_at FROM building_documents WHERE id = ? and user_id IN (/*SLICE:users_id*/?) and deleted_at IS NULL
+`
+
+type GetDocumentByIdParams struct {
+	ID      int64   `json:"id"`
+	UsersID []int64 `json:"users_id"`
+}
+
+func (q *Queries) GetDocumentById(ctx context.Context, arg GetDocumentByIdParams) (BuildingDocument, error) {
+	query := getDocumentById
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.ID)
+	if len(arg.UsersID) > 0 {
+		for _, v := range arg.UsersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(arg.UsersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
+	var i BuildingDocument
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.BuildingID,
+		&i.Path,
+		&i.Mimetype,
+		&i.Size,
+		&i.Thumbnail,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getDocumentForDownloadById = `-- name: GetDocumentForDownloadById :one
+SELECT id, user_id, building_id, path, mimetype, size, thumbnail, created_at, deleted_at FROM building_documents WHERE id = ? and deleted_at IS NULL
+`
+
+func (q *Queries) GetDocumentForDownloadById(ctx context.Context, id int64) (BuildingDocument, error) {
+	row := q.db.QueryRowContext(ctx, getDocumentForDownloadById, id)
+	var i BuildingDocument
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.BuildingID,
+		&i.Path,
+		&i.Mimetype,
+		&i.Size,
+		&i.Thumbnail,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getUserDocuments = `-- name: GetUserDocuments :many
+SELECT id, user_id, building_id, path, mimetype, size, thumbnail, created_at, deleted_at FROM building_documents WHERE user_id IN (/*SLICE:users_id*/?) and deleted_at IS NULL ORDER BY id desc
+`
+
+func (q *Queries) GetUserDocuments(ctx context.Context, usersID []int64) ([]BuildingDocument, error) {
+	query := getUserDocuments
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BuildingDocument{}
+	for rows.Next() {
+		var i BuildingDocument
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.BuildingID,
+			&i.Path,
+			&i.Mimetype,
+			&i.Size,
+			&i.Thumbnail,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -985,5 +1186,19 @@ func (q *Queries) UpdateBuilding(ctx context.Context, arg UpdateBuildingParams) 
 		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
 	}
 	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
+const updateEmbeddings = `-- name: UpdateEmbeddings :exec
+UPDATE building_embeddings SET embedding = ? WHERE building_id = ?
+`
+
+type UpdateEmbeddingsParams struct {
+	Embedding  string `json:"embedding"`
+	BuildingID int64  `json:"building_id"`
+}
+
+func (q *Queries) UpdateEmbeddings(ctx context.Context, arg UpdateEmbeddingsParams) error {
+	_, err := q.db.ExecContext(ctx, updateEmbeddings, arg.Embedding, arg.BuildingID)
 	return err
 }

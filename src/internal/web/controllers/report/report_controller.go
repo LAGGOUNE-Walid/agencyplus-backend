@@ -16,7 +16,7 @@ type ReportController struct {
 	ReportService *report_service.ReportService
 }
 
-func (c *ReportController) CreateReportHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ReportController) CreateReportHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -46,7 +46,7 @@ func (c *ReportController) CreateReportHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (c *ReportController) UpdateReportHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ReportController) UpdateReportHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -103,7 +103,7 @@ func (c *ReportController) UpdateReportHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (c *ReportController) DeleteReportHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ReportController) DeleteReportHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{
@@ -149,7 +149,7 @@ func (c *ReportController) DeleteReportHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (c *ReportController) GetReportsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *ReportController) GetReportsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	userId, ok := r.Context().Value(constants.UserIDContextKey).(int64)
 	if !ok {
 		return response_types.ApiResponse{

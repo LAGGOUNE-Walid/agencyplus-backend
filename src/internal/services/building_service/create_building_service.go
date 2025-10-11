@@ -141,7 +141,7 @@ func (s *CreateBuildingService) Create(ctx context.Context, req requests.CreateB
 			Path:       docPath,
 			Mimetype:   sql.NullString{String: header.Header.Get("Content-Type"), Valid: true},
 			Size:       sql.NullInt64{Int64: header.Size, Valid: true},
-			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s-thumb-1.png", docPath), Valid: true},
+			Thumbnail:  sql.NullString{String: fmt.Sprintf("%s-thumb.png", docPath), Valid: true},
 		})
 		if err != nil {
 			return 0, err

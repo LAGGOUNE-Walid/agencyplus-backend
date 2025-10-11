@@ -157,6 +157,15 @@ type Report struct {
 	DeletedAt sql.NullTime `json:"deleted_at"`
 }
 
+type Shareable struct {
+	ID        int64        `json:"id"`
+	Token     string       `json:"token"`
+	UserID    int64        `json:"user_id"`
+	ModelType string       `json:"model_type"`
+	ModelID   int64        `json:"model_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
+}
+
 type SmsQueue struct {
 	ID              int64          `json:"id"`
 	UserID          int64          `json:"user_id"`
@@ -210,4 +219,19 @@ type User struct {
 	CreatedAt     sql.NullTime   `json:"created_at"`
 	UpdatedAt     sql.NullTime   `json:"updated_at"`
 	DeletedAt     sql.NullTime   `json:"deleted_at"`
+}
+
+type UserSubscription struct {
+	ID                 int64          `json:"id"`
+	UserID             int64          `json:"user_id"`
+	PlanID             int64          `json:"plan_id"`
+	Status             sql.NullString `json:"status"`
+	CurrentPeriodStart time.Time      `json:"current_period_start"`
+	CurrentPeriodEnd   time.Time      `json:"current_period_end"`
+	NextBillingDate    sql.NullTime   `json:"next_billing_date"`
+	TrialStart         sql.NullTime   `json:"trial_start"`
+	TrialEnd           sql.NullTime   `json:"trial_end"`
+	Amount             float64        `json:"amount"`
+	CreatedAt          sql.NullTime   `json:"created_at"`
+	UpdatedAt          sql.NullTime   `json:"updated_at"`
 }

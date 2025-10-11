@@ -17,7 +17,7 @@ type RecommenderController struct {
 	Queries *db.Queries
 }
 
-func (c *RecommenderController) GetForBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *RecommenderController) GetForBuildingHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	idStr := r.PathValue("building_id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -96,7 +96,7 @@ func (c *RecommenderController) GetForBuildingHandler(w http.ResponseWriter, r *
 	}
 }
 
-func (c *RecommenderController) GetForContactsHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *RecommenderController) GetForContactsHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	idStr := r.PathValue("contact_id")
 	id, err := strconv.ParseInt(idStr, 10, 64)

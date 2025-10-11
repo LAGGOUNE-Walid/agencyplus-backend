@@ -3,21 +3,25 @@ package user
 import (
 	"fmt"
 	"logispro/internal/constants"
+	"logispro/internal/services/payment_service"
 	"logispro/internal/services/user_services"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/utils"
 	"logispro/internal/web/requests"
 	"net/http"
+	"time"
 )
 
 type UserController struct {
-	CreateUserService *user_services.CreateUserService
-	AuthService       *user_services.AuthService
-	UpdateUserService *user_services.UpdateUserService
+	CreateUserService   *user_services.CreateUserService
+	AuthService         *user_services.AuthService
+	UpdateUserService   *user_services.UpdateUserService
+	SubscriptionService *payment_service.SubscriptionService
 }
 
-func (c *UserController) CreateUserHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
-	req, validationErrors, err := requests.ParseCreateUserRequest(r, c.CreateUserService.Queries, r.Context())
+func (c *UserController) CreateUserHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
+	ctx := r.Context()
+	req, validationErrors, err := requests.ParseCreateUserRequest(r, c.CreateUserService.Queries, ctx)
 	if err != nil {
 		return response_types.ApiResponse{
 			Error:      err,
@@ -37,7 +41,25 @@ func (c *UserController) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-
+	subscription := payment_service.Subscription{
+		RootId:             userId,
+		PlanId:             payment_service.PLAN_MONTH,
+		Status:             payment_service.SUBS_STATUS_ACTIVE,
+		NextBillingDate:    time.Now().AddDate(0, 0, 15),
+		CurrentPeriodStart: time.Now(),
+		CurrentPeriodEnd:   time.Now().AddDate(0, 0, 15),
+		TrialStart:         time.Now(),
+		TrialEnd:           time.Now().AddDate(0, 0, 15),
+		Ammount:            0,
+	}
+	err = c.SubscriptionService.CreateSubscription(ctx, subscription)
+	if err != nil {
+		c.CreateUserService.Queries.ForceDelete(ctx, userId)
+		return response_types.ApiResponse{
+			Error:      err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
 	return response_types.ApiResponse{
 		Content: map[string]any{
 			"user":  userId,
@@ -48,7 +70,7 @@ func (c *UserController) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (c *UserController) Auth(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *UserController) Auth(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	req, validationErrors := requests.ParseAuthRequest(r)
 	if len(validationErrors) > 0 {
 		return response_types.ApiResponse{
@@ -56,10 +78,25 @@ func (c *UserController) Auth(w http.ResponseWriter, r *http.Request) response_t
 			StatusCode: http.StatusBadRequest,
 		}
 	}
-	user, token, err := c.AuthService.Authenticate(r.Context(), req)
+	ctx := r.Context()
+	user, token, err := c.AuthService.Authenticate(ctx, req)
 	if err != nil {
 		return response_types.ApiResponse{
 			Content:    err.Error(),
+			StatusCode: http.StatusUnauthorized,
+		}
+	}
+	subscriptionStatus, err := c.SubscriptionService.GetSubscriptionStatus(ctx, user.ID)
+	if err != nil {
+		return response_types.ApiResponse{
+			Content:    err.Error(),
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+	if subscriptionStatus != payment_service.SUBS_STATUS_ACTIVE {
+		return response_types.ApiResponse{
+			Content:    "subscription expired",
+			Error:      nil,
 			StatusCode: http.StatusUnauthorized,
 		}
 	}
@@ -78,7 +115,7 @@ func (c *UserController) Auth(w http.ResponseWriter, r *http.Request) response_t
 	}
 }
 
-func (c *UserController) GetAgencyUsers(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *UserController) GetAgencyUsers(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	ctx := r.Context()
 	userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
 	if !ok {
@@ -107,7 +144,7 @@ func (c *UserController) GetAgencyUsers(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (c *UserController) UpdateUserHandler(w http.ResponseWriter, r *http.Request) response_types.ApiResponse {
+func (c *UserController) UpdateUserHandler(w http.ResponseWriter, r *http.Request) response_types.Responder {
 	req, validationErrors, err := requests.ParseUpdateUserRequest(r, c.UpdateUserService.Queries, r.Context())
 	if err != nil {
 		return response_types.ApiResponse{

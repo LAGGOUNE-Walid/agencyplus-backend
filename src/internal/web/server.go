@@ -2,12 +2,14 @@ package web
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"logispro/internal/config"
 	"logispro/internal/constants"
+	"logispro/internal/services/payment_service"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/web/controllers"
 	"net/http"
@@ -24,54 +26,93 @@ type Server struct {
 	Controller controllers.Controller
 }
 
-type ApiHandlerFunc func(w http.ResponseWriter, r *http.Request) response_types.ApiResponse
+type ApiHandlerFunc func(w http.ResponseWriter, r *http.Request) response_types.Responder
 
 func (s *Server) makeHttpHandler(handler ApiHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch || r.Method == http.MethodDelete {
+
 			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 				r.Body = http.MaxBytesReader(w, r.Body, 500<<20) // 500mb
 				err := r.ParseMultipartForm(100 << 20)           // 100 mb
 				if err != nil {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(400)
-
 					json.NewEncoder(w).Encode(map[string]map[string]any{
 						"data": {
-							"error": fmt.Sprintf("failed to parse multipart form: %w", err),
+							"error": fmt.Sprintf("failed to parse multipart form: %s", err),
 						},
 					})
 					return
 				}
 			}
 		}
+
 		resp := handler(w, r)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(resp.StatusCode)
+		// Handle FileResponse separately - it manages its own headers
+		if fileResp, ok := resp.(response_types.FileResponse); ok {
+			// Only set Content-Disposition, let ServeFile handle Content-Type
+			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileResp.Name))
 
-		if resp.Error != nil {
-			if resp.StatusCode == http.StatusInternalServerError {
-				s.Logger.Error("error", slog.Any("content", resp.Error))
+			// Handle errors for file responses
+			if resp.GetError() != nil {
+				if errors.Is(resp.GetError(), sql.ErrNoRows) {
+					http.NotFound(w, r)
+				} else {
+					http.Error(w, "File not found", resp.GetStatusCode())
+				}
+				return
+			}
+
+			// Serve the file - this handles all headers and status codes
+			http.ServeFile(w, r, fmt.Sprintf("uploads/%s", fileResp.Name))
+			return
+		}
+
+		// Handle all other response types (JSON responses)
+		w.Header().Set("Content-Type", "application/json")
+
+		if errors.Is(resp.GetError(), sql.ErrNoRows) {
+			w.WriteHeader(404)
+		} else {
+			w.WriteHeader(resp.GetStatusCode())
+		}
+
+		if resp.GetError() != nil {
+			if errors.Is(resp.GetError(), sql.ErrNoRows) {
 				json.NewEncoder(w).Encode(map[string]map[string]any{
 					"data": {
-						"error": "internal server error",
+						"error": "not found",
 					},
 				})
 			} else {
-				json.NewEncoder(w).Encode(map[string]map[string]any{
-					"data": {
-						"error": resp.Error.Error(),
-					},
-				})
+				if resp.GetStatusCode() == http.StatusInternalServerError {
+					s.Logger.Error("error", slog.Any("content", resp.GetError()))
+					json.NewEncoder(w).Encode(map[string]map[string]any{
+						"data": {
+							"error": "internal server error",
+						},
+					})
+				} else {
+					json.NewEncoder(w).Encode(map[string]map[string]any{
+						"data": {
+							"error": resp.GetError(),
+						},
+					})
+				}
 			}
 		} else {
-			json.NewEncoder(w).Encode(map[string]any{
-				"data": resp.Content,
-			})
+			switch v := resp.(type) {
+			case response_types.ApiResponse:
+				json.NewEncoder(w).Encode(map[string]any{
+					"data": v.Content,
+				})
+			default:
+				fmt.Println("Unknown response type")
+			}
 		}
 	}
-
 }
 func (s *Server) LoggingMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -135,7 +176,7 @@ func (s *Server) Run() {
 	mux.Handle("POST /auth", s.makeHttpHandler(s.Controller.UserController.Auth))
 	mux.Handle("PATCH /user", AuthMiddleware(OwnerGuardMiddleware(s.makeHttpHandler(s.Controller.UserController.UpdateUserHandler))))
 	mux.Handle("POST /contact", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.CreateContactHandler)))
-	mux.Handle("GET /contact", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.GetContactsHandler)))
+	mux.Handle("GET /contact", AuthMiddleware(SubsribedMiddleware(s.makeHttpHandler(s.Controller.ContactController.GetContactsHandler), s)))
 	mux.Handle("GET /contacts", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.GetContactsListHandler)))
 	mux.Handle("GET /count-contacts", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.CountContactsHandler)))
 	mux.Handle("GET /contact/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.ContactController.GetContactHandler)))
@@ -168,6 +209,13 @@ func (s *Server) Run() {
 	mux.Handle("GET /get-contact-recommendations/{contact_id}", AuthMiddleware(s.makeHttpHandler(s.Controller.RecommenderController.GetForContactsHandler)))
 	mux.Handle("GET /buildings-daira-distributions", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetDairaDistributionHandler)))
 	mux.Handle("GET /buildings-map", AuthMiddleware(s.makeHttpHandler(s.Controller.BuildingController.GetMapHandler)))
+	mux.Handle("POST /share/{id}/{type}", AuthMiddleware(s.makeHttpHandler(s.Controller.ShareableController.Share)))
+	mux.Handle("POST /document", AuthMiddleware(s.makeHttpHandler(s.Controller.DocumentController.CreateDocumentHandler)))
+	mux.Handle("GET /documents", AuthMiddleware(s.makeHttpHandler(s.Controller.DocumentController.GetDocumentsHandler)))
+	mux.Handle("DELETE /document/{id}", AuthMiddleware(s.makeHttpHandler(s.Controller.DocumentController.DeleteDocumentHandler)))
+	mux.Handle("GET /d/{token}", s.makeHttpHandler(s.Controller.DocumentController.DownloadDocumentHandler))
+	mux.Handle("GET /b/{token}", s.makeHttpHandler(s.Controller.BuildingController.GetSharedBuilding))
+	mux.Handle("POST /payment-link", AuthMiddleware(s.makeHttpHandler(s.Controller.SubscriptionController.CreateCheckoutLink)))
 
 	handler := RecoveryMiddleware(s.Logger)(s.LoggingMiddleware(s.Logger)(mux))
 	s.Logger.Info("starting server ", slog.String("domain ", s.Domain))
@@ -248,6 +296,27 @@ func OwnerGuardMiddleware(next http.Handler) http.Handler {
 		}
 		if role != constants.ROLE_OWENER {
 			http.Error(w, "this endpoint is gaurded with owner role", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func SubsribedMiddleware(next http.Handler, s *Server) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		userId, ok := ctx.Value(constants.UserIDContextKey).(int64)
+		if !ok {
+			http.Error(w, "failed to get user id from context", http.StatusUnauthorized)
+			return
+		}
+		subscriptionStatus, err := s.Controller.SubscriptionController.GetStatus(ctx, userId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if subscriptionStatus != payment_service.SUBS_STATUS_ACTIVE {
+			http.Error(w, "subscription expired", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
