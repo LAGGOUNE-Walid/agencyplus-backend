@@ -10,6 +10,7 @@ import (
 	"logispro/internal/services/contact_service"
 	"logispro/internal/services/document_service"
 	"logispro/internal/services/payment_service"
+	pdfservice "logispro/internal/services/pdf_service"
 	"logispro/internal/services/report_service"
 	"logispro/internal/services/sms_service"
 	"logispro/internal/services/task_service"
@@ -28,7 +29,7 @@ import (
 	"logispro/internal/web/controllers/task"
 	"logispro/internal/web/controllers/user"
 	"os"
-	"time"
+	"path/filepath"
 
 	"github.com/Chargily/chargily-pay-go/pkg/chargily"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -129,7 +130,7 @@ func InitServices(logger *slog.Logger, db *sql.DB, queries *db.Queries, rabbitMq
 
 func main() {
 	config.LoadEnv()
-	time.Sleep(10 * time.Second)
+	// time.Sleep(10 * time.Second)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	sqliteDb, err := sqlite.New("file", config.SqlitePath)
@@ -148,7 +149,37 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	paymentService := payment_service.PaymentService{Client: pclient}
+
+	templatesAbsPath, err := filepath.Abs("templates/")
+	if err != nil {
+		err = os.Mkdir("templates/", 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+	storageAbsPath, err := filepath.Abs("storage/")
+	if err != nil {
+		err = os.Mkdir("storage/", 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+	pdfGenerator := pdfservice.Generator{TemplatesDir: templatesAbsPath, Logger: logger, StorageDir: storageAbsPath}
+	data := pdfservice.InvoiceTemplateData{
+		Title:       "Monthly Payment Report",
+		AgencyName:  "PulseTracker Agency",
+		Description: "Summary of users who made payments in October",
+		PaymentID:   "PAY-2025-10-001",
+		Amount:      125000,
+		Usernames: []db.User{
+			{Fullname: "Alice Dupont", Email: "alice@example.com"},
+			{Fullname: "Karim Benali", Email: "karim@example.com"},
+		},
+	}
+
+	pdfGenerator.Generate("invoice.pdf", "email/invoice.html", data)
+
+	paymentService := payment_service.PaymentService{Client: pclient, Queries: queries}
 	controllers := InitServices(logger, sqliteDb.GetDB(), queries, rabbitMqConn, paymentService)
 	server := web.NewServer("0.0.0.0:8085", logger, controllers)
 	server.Run()

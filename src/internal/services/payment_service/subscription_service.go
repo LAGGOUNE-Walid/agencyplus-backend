@@ -26,7 +26,7 @@ type SubscriptionService struct {
 }
 
 type Subscription struct {
-	RootId             int64
+	UserId             int64
 	PlanId             int64
 	Status             Status
 	CurrentPeriodStart time.Time
@@ -47,7 +47,7 @@ func (s *SubscriptionService) GetUserSubscriptions(ctx context.Context, userId i
 
 func (s *SubscriptionService) CreateSubscription(ctx context.Context, sub Subscription) error {
 	return s.Queries.CreateUsersubscription(ctx, db.CreateUsersubscriptionParams{
-		UserID:             sub.RootId,
+		UserID:             sub.UserId,
 		PlanID:             sub.PlanId,
 		Status:             sql.NullString{Valid: true, String: string(sub.Status)},
 		CurrentPeriodStart: sub.CurrentPeriodStart,

@@ -42,7 +42,7 @@ func (c *UserController) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	subscription := payment_service.Subscription{
-		RootId:             userId,
+		UserId:             userId,
 		PlanId:             payment_service.PLAN_MONTH,
 		Status:             payment_service.SUBS_STATUS_ACTIVE,
 		NextBillingDate:    time.Now().AddDate(0, 0, 15),
@@ -93,11 +93,11 @@ func (c *UserController) Auth(w http.ResponseWriter, r *http.Request) response_t
 			StatusCode: http.StatusInternalServerError,
 		}
 	}
-	if subscriptionStatus != payment_service.SUBS_STATUS_ACTIVE {
+	if subscriptionStatus != payment_service.SUBS_STATUS_ACTIVE && subscriptionStatus != payment_service.SUBS_STATUS_CANCELLED {
 		return response_types.ApiResponse{
 			Content:    "subscription expired",
 			Error:      nil,
-			StatusCode: http.StatusUnauthorized,
+			StatusCode: http.StatusPaymentRequired,
 		}
 	}
 	return response_types.ApiResponse{

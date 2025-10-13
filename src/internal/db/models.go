@@ -147,6 +147,13 @@ type ContactEmbedding struct {
 	CreatedAt sql.NullTime `json:"created_at"`
 }
 
+type Payment struct {
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	Payload   string       `json:"payload"`
+	CreatedAt sql.NullTime `json:"created_at"`
+}
+
 type Report struct {
 	ID        int64        `json:"id"`
 	UserID    int64        `json:"user_id"`
