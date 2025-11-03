@@ -34,7 +34,7 @@ type Subscription struct {
 	NextBillingDate    time.Time
 	TrialStart         time.Time
 	TrialEnd           time.Time
-	Ammount            float64
+	Amount             float64
 }
 
 func (s *SubscriptionService) GetUserCurrentSubscription(ctx context.Context, userId int64) (db.UserSubscription, error) {
@@ -55,7 +55,7 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, sub Subscr
 		TrialStart:         sql.NullTime{Valid: !sub.TrialStart.IsZero(), Time: sub.TrialStart},
 		TrialEnd:           sql.NullTime{Valid: !sub.TrialEnd.IsZero(), Time: sub.TrialEnd},
 		NextBillingDate:    sql.NullTime{Valid: !sub.NextBillingDate.IsZero(), Time: sub.NextBillingDate},
-		Amount:             float64(sub.Ammount),
+		Amount:             float64(sub.Amount),
 	})
 }
 

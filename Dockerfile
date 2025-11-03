@@ -16,7 +16,8 @@ RUN go mod download
 COPY ./src .
 
 # RUN go build -o /bin/building_embedding_generation ./cmd/building_embedding_generation.go
-RUN go build -o /bin/contact_embedding_generation ./cmd/contact_embedding_generation.go
+# RUN go build -o /bin/contact_embedding_generation ./cmd/contact_embedding_generation.go
+RUN go build -o /bin/worker ./cmd/queue/worker.go
 RUN go build -o /bin/logispro
 
 # Default command (can be overridden in docker-compose)

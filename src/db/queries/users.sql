@@ -90,6 +90,9 @@ WHERE id = ?;
 -- name: GetUser :one
 SELECT * FROM users where id = ?;
 
+-- name: GetUsers :many
+SELECT * FROM users where id IN(sqlc.slice('users_id'));
+
 -- name: ForceDelete :exec
 DELETE FROM users where id = ?;
 

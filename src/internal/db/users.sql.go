@@ -399,6 +399,59 @@ func (q *Queries) GetUserSubscriptions(ctx context.Context, userID int64) ([]Use
 	return items, nil
 }
 
+const getUsers = `-- name: GetUsers :many
+SELECT id, fullname, role, root_id, email, phone, agency_name, agency_address, agency_logo, wilaya, daira, password, created_at, updated_at, deleted_at FROM users where id IN(/*SLICE:users_id*/?)
+`
+
+func (q *Queries) GetUsers(ctx context.Context, usersID []int64) ([]User, error) {
+	query := getUsers
+	var queryParams []interface{}
+	if len(usersID) > 0 {
+		for _, v := range usersID {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:users_id*/?", strings.Repeat(",?", len(usersID))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:users_id*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Fullname,
+			&i.Role,
+			&i.RootID,
+			&i.Email,
+			&i.Phone,
+			&i.AgencyName,
+			&i.AgencyAddress,
+			&i.AgencyLogo,
+			&i.Wilaya,
+			&i.Daira,
+			&i.Password,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAgencyUsersSubscriptionStatus = `-- name: UpdateAgencyUsersSubscriptionStatus :exec
 UPDATE user_subscriptions SET status = ? WHERE user_id IN(/*SLICE:users_id*/?)
 `

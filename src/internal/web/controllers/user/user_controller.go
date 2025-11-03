@@ -50,7 +50,7 @@ func (c *UserController) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 		CurrentPeriodEnd:   time.Now().AddDate(0, 0, 15),
 		TrialStart:         time.Now(),
 		TrialEnd:           time.Now().AddDate(0, 0, 15),
-		Ammount:            0,
+		Amount:             0,
 	}
 	err = c.SubscriptionService.CreateSubscription(ctx, subscription)
 	if err != nil {

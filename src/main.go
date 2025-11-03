@@ -164,22 +164,9 @@ func main() {
 			panic(err)
 		}
 	}
-	pdfGenerator := pdfservice.Generator{TemplatesDir: templatesAbsPath, Logger: logger, StorageDir: storageAbsPath}
-	data := pdfservice.InvoiceTemplateData{
-		Title:       "Monthly Payment Report",
-		AgencyName:  "PulseTracker Agency",
-		Description: "Summary of users who made payments in October",
-		PaymentID:   "PAY-2025-10-001",
-		Amount:      125000,
-		Usernames: []db.User{
-			{Fullname: "Alice Dupont", Email: "alice@example.com"},
-			{Fullname: "Karim Benali", Email: "karim@example.com"},
-		},
-	}
+	pdfGenerator := pdfservice.Generator{TemplatesDir: templatesAbsPath, Logger: logger, StorageDir: storageAbsPath, RabbitMqConn: rabbitMqConn}
 
-	pdfGenerator.Generate("invoice.pdf", "email/invoice.html", data)
-
-	paymentService := payment_service.PaymentService{Client: pclient, Queries: queries}
+	paymentService := payment_service.PaymentService{Client: pclient, Queries: queries, PdfGenerator: pdfGenerator}
 	controllers := InitServices(logger, sqliteDb.GetDB(), queries, rabbitMqConn, paymentService)
 	server := web.NewServer("0.0.0.0:8085", logger, controllers)
 	server.Run()

@@ -1,4 +1,4 @@
-package main
+package worker
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ type OllamaEmbeddingResponse struct {
 	Embedding []float64 `json:"embedding"`
 }
 
-func main() {
+func StartBuildingEmbdGenerationWorker() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	logger.Info("sleeping 10s")
 	time.Sleep(time.Second * 10)
@@ -167,8 +167,8 @@ func main() {
 			rmq.Publish("created_buildings", msg.Body, amqp.Table{"x-retry": retryCount + 1})
 			continue
 		}
-		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
 		var OllamaEmbeddingResponse OllamaEmbeddingResponse
 		json.Unmarshal(body, &OllamaEmbeddingResponse)
 		jsonEmbedding, _ := json.Marshal(OllamaEmbeddingResponse.Embedding)

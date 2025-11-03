@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -19,6 +20,11 @@ var ProductId string
 var MonthlyPriceId string
 var PaymentEndpoint string
 var AppUrl string
+var MailHost string
+var MailBulkHost string
+var MailPort int
+var MailUsername string
+var MailPassword string
 
 func LoadEnv() {
 	_ = godotenv.Load(".env")
@@ -34,7 +40,24 @@ func LoadEnv() {
 	monthlyPriceId := os.Getenv("CHARGILY_MONTHLY_PRICE_ID")
 	paymentEndpoint := os.Getenv("CHARGILY_ENDPOINT")
 	appUrl := os.Getenv("APP_URL")
+	mailHost := os.Getenv("MAIL_HOST")
+	mailBulkHost := os.Getenv("MAIL_BULK_HOST")
+	mailPort := os.Getenv("MAIL_PORT")
+	mailUsername := os.Getenv("MAIL_USERNAME")
+	mailPassword := os.Getenv("MAIL_PASSWORD")
 
+	if mailHost == "" {
+		log.Fatal("MAIL_HOST not set in environment")
+	}
+	if mailPort == "" {
+		log.Fatal("MAIL_PORT not set in environment")
+	}
+	if mailUsername == "" {
+		log.Fatal("MAIL_USERNAME not set in environment")
+	}
+	if mailPassword == "" {
+		log.Fatal("MAIL_PASSWORD not set in environment")
+	}
 	if appUrl == "" {
 		log.Fatal("APP_URL not set in environment")
 	}
@@ -84,4 +107,9 @@ func LoadEnv() {
 	MonthlyPriceId = monthlyPriceId
 	PaymentEndpoint = paymentEndpoint
 	AppUrl = appUrl
+	MailHost = mailHost
+	MailBulkHost = mailBulkHost
+	MailPort, _ = strconv.Atoi(mailPort)
+	MailUsername = mailUsername
+	MailPassword = mailPassword
 }

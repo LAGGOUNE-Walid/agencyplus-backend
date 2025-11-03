@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"logispro/internal/config"
 	"logispro/internal/db"
+	pdfservice "logispro/internal/services/pdf_service"
 
 	"github.com/Chargily/chargily-pay-go/pkg/chargily"
 	"github.com/Chargily/chargily-pay-go/pkg/models"
 )
 
 type PaymentService struct {
-	Client  *chargily.Client
-	Queries *db.Queries
+	Client       *chargily.Client
+	Queries      *db.Queries
+	PdfGenerator pdfservice.Generator
 }
 
 func (p *PaymentService) CreateCheckoutLink(users []int64, priceId string) (*models.Checkout, error) {

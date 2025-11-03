@@ -7,6 +7,7 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./src/uploads:/uploads:ro 
+      - ./src/storage/invoices:/storage/invoices:ro 
     depends_on:
       - app
     networks:
@@ -48,18 +49,27 @@ services:
       - ./redis_data:/data
     networks:
       - logispro-net
-  building-embedding:
+  building-embedding-listener:
      build: .
      volumes:
       - ./src:/app
-     command: /bin/building_embedding_generation
+     command: /bin/worker --worker="building_embd"
      depends_on:
        - rabbitmq
      networks:
        - logispro-net
-  contact-embedding:
+  contact-embedding-listener:
      build: .
-     command: /bin/contact_embedding_generation
+     command:  /bin/worker --worker="contact_embd"
+     volumes:
+       - ./src:/app
+     depends_on:
+       - rabbitmq
+     networks:
+       - logispro-net
+  send-invoices-listener:
+     build: .
+     command:  /bin/worker --worker="email_invoice"
      volumes:
        - ./src:/app
      depends_on:
@@ -67,12 +77,6 @@ services:
      networks:
        - logispro-net
   
-      
-  #   depends_on:
-  #     - rabbitmq
-  #   networks:
-  #     - logispro-net
-  #   command: ./bin/logispro
   rabbitmq:
     image: rabbitmq:4-management
     container_name: logispro-rabbitmq

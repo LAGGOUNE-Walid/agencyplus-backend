@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,10 +13,13 @@ import (
 	"logispro/internal/constants"
 	"logispro/internal/db"
 	"logispro/internal/services/payment_service"
+	pdfservice "logispro/internal/services/pdf_service"
 	"logispro/internal/shared/response_types"
 	"logispro/internal/utils"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type SubscriptionController struct {
@@ -172,7 +176,50 @@ func (s *SubscriptionController) ChargilyWebhook(w http.ResponseWriter, r *http.
 				usersSlice = append(usersSlice, int64(f))
 			}
 		}
+		paymentId := uuid.NewString()
 		for _, userID := range usersSlice {
+			user, err := s.SubscriptionService.Queries.GetUser(ctx, userID)
+			if err != nil {
+				return response_types.ApiResponse{
+					Content:    nil,
+					Error:      fmt.Errorf("faild to get user with id %d", userID),
+					StatusCode: http.StatusInternalServerError,
+				}
+			}
+			if !user.RootID.Valid {
+				rUser, err := s.SubscriptionService.Queries.GetUser(ctx, userID)
+				if err != nil {
+					return response_types.ApiResponse{
+						Content:    nil,
+						Error:      fmt.Errorf("faild to get user with id %d", userID),
+						StatusCode: http.StatusInternalServerError,
+					}
+				}
+
+				s.PaymentService.SavePaymentPayload(ctx, userID, string(payload))
+				invoiceName := rUser.Fullname + " invoice " + time.Now().Format("2006-01-02 ") + paymentId
+				agencyUsers, err := s.SubscriptionService.Queries.GetAgencyUsers(ctx, sql.NullInt64{Valid: true, Int64: userID})
+				if err != nil {
+					return response_types.ApiResponse{
+						Content:    nil,
+						Error:      fmt.Errorf("faild to get agency users of root id %d", userID),
+						StatusCode: http.StatusInternalServerError,
+					}
+				}
+				users := make([]db.User, 0, len(agencyUsers))
+				for _, agu := range agencyUsers {
+					users = append(users, db.User{Fullname: agu.Fullname, Email: agu.Email, ID: agu.ID})
+				}
+				data := pdfservice.InvoiceTemplateData{
+					Title:       "Subscription payment report",
+					AgencyName:  rUser.AgencyName,
+					Description: "Summary payment of " + time.Now().Format("2006-01-02"),
+					PaymentID:   paymentId,
+					Amount:      amount,
+					Users:       users,
+				}
+				s.PaymentService.PdfGenerator.Generate(invoiceName+".pdf", "email/invoice.html", data)
+			}
 			subscription := payment_service.Subscription{
 				UserId:             userID,
 				PlanId:             payment_service.PLAN_MONTH,
@@ -182,10 +229,9 @@ func (s *SubscriptionController) ChargilyWebhook(w http.ResponseWriter, r *http.
 				NextBillingDate:    time.Now().AddDate(0, 1, 0),
 				TrialStart:         time.Time{},
 				TrialEnd:           time.Time{},
-				Ammount:            amount,
+				Amount:             amount,
 			}
 			s.SubscriptionService.CreateSubscription(ctx, subscription)
-			s.PaymentService.SavePaymentPayload(ctx, userID, string(payload))
 		}
 	}
 	return response_types.ApiResponse{

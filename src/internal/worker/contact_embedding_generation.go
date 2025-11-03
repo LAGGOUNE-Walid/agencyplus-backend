@@ -1,4 +1,4 @@
-package main
+package worker
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ type OllamaContactResponse struct {
 	Embedding []float64 `json:"embedding"`
 }
 
-func main() {
+func StartContactEmbdGeneration() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	logger.Info("sleeping 10s")
 	time.Sleep(time.Second * 10)
@@ -163,8 +163,8 @@ func main() {
 			rmq.Publish("created_contacts", msg.Body, amqp.Table{"x-retry": retryCount + 1})
 			continue
 		}
-		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
 		var OllamaContactResponse OllamaContactResponse
 		json.Unmarshal(body, &OllamaContactResponse)
 		jsonEmbedding, _ := json.Marshal(OllamaContactResponse.Embedding)

@@ -27,10 +27,10 @@
 </head>
 
 <body>
-    <h3>{{ .Title }}</h3>
-    <h3>{{ .AgencyName }}</h3>
-    <p>{{ .Description }}</p>
-    <p>Payment ID: {{ .PaymentID }}</p>
+    <h3>Subscription payment report</h3>
+    <h3>el 7ayat</h3>
+    <p>Summary payment of 2025-11-03</p>
+    <p>Payment ID: 1d424618-748e-4a74-8d7e-39fe56396e9a</p>
 
     <table>
         <thead>
@@ -40,16 +40,21 @@
             </tr>
         </thead>
         <tbody>
-            {{ range $i, $user := .Users }}
+            
             <tr>
-                <td>{{ $user.Fullname }}</td>
-                <td>{{ $user.Email }}</td>
+                <td></td>
+                <td></td>
             </tr>
-            {{ end }}
+            
+            <tr>
+                <td>walid2</td>
+                <td>test2@test.com</td>
+            </tr>
+            
         </tbody>
     </table>
 
-    <p>Amount: {{ .Amount }} DZD</p>
+    <p>Amount: 3000 DZD</p>
 </body>
 
 </html>
