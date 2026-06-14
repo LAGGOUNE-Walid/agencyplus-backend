@@ -18,14 +18,6 @@
 
 The `agencyplus-backend` project provides a high-performance, containerized backend solution designed to centralize and streamline all critical agency operations. Built with Go for speed and reliability, and orchestrated with Docker for seamless deployment, it empowers agencies to consolidate their tools, automate workflows, and provide a unified data foundation, ultimately enhancing client satisfaction and driving sustainable growth.
 
-## Key Features
-
-🚀 **Blazing Fast Performance**: Leveraging Go's concurrency model for superior API response times and efficient resource utilization, ensuring a smooth user experience even under heavy load.
-🛡️ **Robust Security**: Implements industry-standard authentication and authorization mechanisms to protect sensitive client and project data, ensuring compliance and trust.
-🧩 **Modular & Scalable Architecture**: Designed with a microservices-friendly approach, allowing for independent development and scaling of components to adapt to evolving agency needs.
-🔗 **Seamless Integrations**: Provides a powerful, well-documented API to easily connect with front-end applications, third-party services, and other agency tools.
-📦 **Containerized Deployment**: Utilizes Docker and Docker Compose for effortless setup, consistent environments, and simplified scaling across development, staging, and production.
-📈 **Real-time Data Insights**: Facilitates efficient data processing and retrieval, enabling agencies to gain immediate insights into projects, clients, and team performance.
 
 ## Technical Architecture
 
