@@ -7,7 +7,6 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/YOUR_USERNAME/agencyplus-backend/actions)
 [![License](https://img.shields.io/github/license/YOUR_USERNAME/agencyplus-backend?color=blue)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/YOUR_USERNAME/agencyplus-backend/blob/main/CONTRIBUTING.md)
-[![GitHub Stars](https://img.shields.io/github/stars/YOUR_USERNAME/agencyplus-backend?style=social)](https://github.com/YOUR_USERNAME/agencyplus-backend/stargazers)
 
 </div>
 
